@@ -5,6 +5,8 @@
       ./hardware-configuration.nix
     ];
 
+##### Boot Settings ############################################################
+
   # Use the systemd-boot EFI boot loader.
   # boot.loader.systemd-boot.enable = true;
   # boot.loader.efi.canTouchEfiVariables = true;
@@ -19,60 +21,26 @@
     ];
   };
 
-  # ZFS
+##### ZFS Settings #############################################################
+
   # Enable zram swap as OpenZFS does not support swap on zvols nor swapfiles on a ZFS dataset.
   zramSwap.enable = true;
   services.zfs.autoScrub.enable = true;
 
+##### File Systems #############################################################
 
-  # Timezone and locale
-  time.timeZone = "Europe/Amsterdam";
-  console.keyMap = "us";
-  i18n = {
-    supportedLocales = [ "en_US.UTF-8/UTF-8" "nl_NL.UTF-8/UTF-8" ];
+  fileSystems."/mnt/media" = {
+    device = "//nas/data/media";
+    fsType = "cifs";
+    options = let
+      # this line prevents hanging on network split
+      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+
+      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
   };
+ 
+##### Graphics #################################################################
 
-  # Networking
-  networking = {
-    hostName = "nwa";
-    hostId = "04ef5600";
-    #useDHCP = false;
-    #bridges."bridge0".interfaces = [ "eno2" ];
-    #interfaces."bridge0".useDHCP = true;
-    firewall.enable = false;
-    nftables.enable = true;
-  };
-
-
-  # User accounts
-  users.users."dolf"= {
-    isNormalUser = true;
-    description = "Dolf ter Hofste";
-    extraGroups = [ "wheel" "docker" ];
-    packages = with pkgs; [];
-  };
-
-  # Enable automatic login for the user.
-  services.getty.autologinUser = "dolf";
-
-
-  # Packages
-  nixpkgs.config.allowUnfree = true;
-  environment.systemPackages = with pkgs; [
-    cifs-utils
-    cockpit
-    docker-compose
-    git
-    htop
-    jq
-    lshw
-    parted
-    sanoid
-    smartmontools
-  ];
-
-
-  # Graphics
   nixpkgs.config.packageOverrides = pkgs: {
       vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
     };
@@ -90,26 +58,133 @@
     };
 
 
-  # Services
-  services.jellyfin.enable = true;
-  services.mealie.enable = true;
-  services.scrutiny.enable = true;
+##### Timezone & Locale ########################################################
 
-  # Syncthing
+  time.timeZone = "Europe/Amsterdam";
+  console.keyMap = "us";
+  i18n = {
+    supportedLocales = [ "en_US.UTF-8/UTF-8" "nl_NL.UTF-8/UTF-8" ];
+  };
+
+##### Networking ###############################################################
+
+  networking = {
+    hostName = "nwa";
+    hostId = "04ef5600";
+    #useDHCP = false;
+    #bridges."bridge0".interfaces = [ "eno2" ];
+    #interfaces."bridge0".useDHCP = true;
+    firewall.enable = false;
+    nftables.enable = true;
+  };
+
+##### User Accounts ############################################################
+
+  users.users."dolf"= {
+    isNormalUser = true;
+    description = "Dolf ter Hofste";
+    extraGroups = [ "wheel" "docker" ];
+    packages = with pkgs; [];
+  };
+
+  # Enable automatic login for the user.
+  services.getty.autologinUser = "dolf";
+
+  
+##### Packages #################################################################
+  
+  nixpkgs.config.allowUnfree = true;
+  environment.systemPackages = with pkgs; [
+    cifs-utils
+    cockpit
+    docker-compose
+    git
+    htop
+    jq
+    lshw
+    parted
+    sanoid
+    smartmontools
+  ];
+
+  ##### Programs #################################################################
+
+  programs = {
+    neovim.enable = true;
+    neovim.defaultEditor = true;
+    fish.enable = true;
+    fish.shellAliases = {
+      cc = "sudo vim /etc/nixos/configuration.nix";
+      rr = "sudo nixos-rebuild switch";
+      ll = "ls -alh";
+     };
+  };
+
+
+##### Services #################################################################
+
   services = {
+    
+    jellyfin.enable = true;
+    mealie.enable = true;
+    scrutiny.enable = true;
+    
+    homepage-dashboard = {
+      enable = true;
+      widgets = [
+        {
+          resources = {
+            cpu = true;
+            disk = "/";
+            memory = true;
+          };
+        }
+        {
+          search = {
+            provider = "duckduckgo";
+            target = "_blank";
+          };
+        }
+      ];
+    };
+  
     syncthing = {
-        enable = true;
-        group = "users";
-        user = "dolf";
-	guiAddress = "0.0.0.0:8384";
-        dataDir = "/home/dolf/";
-        configDir = "/home/dolf/.config/syncthing";
+      enable = true;
+      group = "users";
+      user = "dolf";
+      guiAddress = "0.0.0.0:8384";
+      dataDir = "/home/dolf/";
+      configDir = "/home/dolf/.config/syncthing";
+      overrideDevices = true;
+      overrideFolders = true;
+      settings = {
+        devices = {
+          "gza" = { id = "Z5EGWQK-ZS2DGQC-WJ4BKMS-4EMWVJH-YSX43YL-X44QTRQ-DCWYIBF-BD3NTAT"; };
+          "nas" = { id = "TONHWXI-TTLGRND-MJ54BVE-UW3NLSR-AR24U7N-3PXKIHU-I66I3QX-AQLDBQ7"; };
+        };
+        folders = {
+          "Documents" = {
+            path = "/home/dolf/Documents";
+	    devices = [ "gza" "nas" ];
+          };
+        };
+      };
+    };
+  
+    tailscale = {
+      enable = true;
+      useRoutingFeatures = "server";
     };
   };
 
-  # Tailscale
-  services.tailscale.enable = true;
-  services.tailscale.useRoutingFeatures = "server";
+##### Containers ###############################################################
+
+  virtualisation.docker.rootless = {
+    enable = true;
+    setSocketVariable = true;
+  };
+
+##### Voodoo ###################################################################
 
   # create a oneshot job to authenticate to Tailscale
   systemd.services.tailscale-autoconnect = {
@@ -139,52 +214,7 @@
     '';
   };
 
-  #Homepage
-  services.homepage-dashboard.enable = true;
-  services.homepage-dashboard.widgets = [
-    {
-      resources = {
-        cpu = true;
-        disk = "/";
-        memory = true;
-      };
-    }
-    {
-      search = {
-        provider = "duckduckgo";
-        target = "_blank";
-      };
-     }
-    {
-      widget = {
-        type = "scrutiny";
-        url = "http://nwa:8080";
-      };
-    }
-  ];
-
-
-  virtualisation.docker.rootless = {
-    enable = true;
-    setSocketVariable = true;
-  };
-  
-  # Programs
-  # Neovim
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-   # plugins = [ pkgs.vimPlugins.nvim-treesitter.withAllGrammars ];
-  };
-
-  # Fish shell
-  programs.fish.enable = true;
-
   # Launch fish from bash (prevents warning https://fishshell.com/docs/current/index.html#default-shell)
-  programs.fish.shellAliases = {
-    rr = "sudo nixos-rebuild switch";
-    ll = "ls -alh";
-  };
   programs.bash = {
     interactiveShellInit = ''
       if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
@@ -195,38 +225,10 @@
     '';
   };
 
-  
-  # SMB shares
-  fileSystems."/mnt/smb/media" = {
-    device = "//nas/data/media";
-    fsType = "cifs";
-    options = let
-      # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+##### NixOS System Installed Version (Do not edit) #############################
 
-      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
-  };
-
-  fileSystems."/mnt/smb/docker" = {
-    device = "//nas/docker";
-    fsType = "cifs";
-    options = let
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
-
-      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
-  };
-
-  fileSystems."/mnt/docker" = {
-    device = "nas:/volume1/docker";
-    fsType = "nfs";
-  };
-
-  fileSystems."/mnt/media" = {
-    device = "nas:/volume1/data";
-    fsType = "nfs";
-  };
-
-  # Can't touch this
   system.stateVersion = "24.11";
+
+################################################################################
 }
 
