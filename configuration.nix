@@ -1,25 +1,20 @@
-# Edit this configuration file to define what should be installed on
-# your system. Help is available in the configuration.nix(5) man page, on
-# https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
-
 { config, lib, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
+  imports = [
       ./hardware-configuration.nix
     ];
 
   # Use the systemd-boot EFI boot loader.
   # boot.loader.systemd-boot.enable = true;
   # boot.loader.efi.canTouchEfiVariables = true;
-  
+
   boot.loader.grub = {
     enable = true;
     zfsSupport = true;
     efiSupport = true;
     efiInstallAsRemovable = true;
-    mirroredBoots = [ 
+    mirroredBoots = [
       { devices = ["nodev"]; path ="/boot"; }
     ];
   };
@@ -27,44 +22,46 @@
   # ZFS
   # Enable zram swap as OpenZFS does not support swap on zvols nor swapfiles on a ZFS dataset.
   zramSwap.enable = true;
-  services.zfs.autoScrub.enable = true; 
+  services.zfs.autoScrub.enable = true;
 
- 
+
   # Timezone and locale
-  time.timeZone = "Europe/Amsterdam";  
+  time.timeZone = "Europe/Amsterdam";
   console.keyMap = "us";
   i18n = {
     supportedLocales = [ "en_US.UTF-8/UTF-8" "nl_NL.UTF-8/UTF-8" ];
   };
-  
+
   # Networking
   networking = {
     hostName = "nwa";
     hostId = "04ef5600";
-    useDHCP = false;
-    bridges."bridge0".interfaces = [ "eno2" ];
-    interfaces."bridge0".useDHCP = true;
+    #useDHCP = false;
+    #bridges."bridge0".interfaces = [ "eno2" ];
+    #interfaces."bridge0".useDHCP = true;
     firewall.enable = false;
-    firewall.trustedInterfaces = [ "incusbr*" ];
     nftables.enable = true;
   };
 
-  # User accounts.
-  users.users.dolf = {
+
+  # User accounts
+  users.users."dolf"= {
     isNormalUser = true;
     description = "Dolf ter Hofste";
-    extraGroups = [ "networkmanager" "wheel" "incus-admin" ];
+    extraGroups = [ "wheel" "docker" ];
     packages = with pkgs; [];
   };
- 
+
   # Enable automatic login for the user.
   services.getty.autologinUser = "dolf";
+
 
   # Packages
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     cifs-utils
     cockpit
+    docker-compose
     git
     htop
     jq
@@ -74,82 +71,43 @@
     smartmontools
   ];
 
-  # Enable incus and set the configuration preseed
-  virtualisation.incus = {
-    enable = true;
-    package = pkgs.incus;
-    preseed = {
 
-      networks = [
-        {
-          name = "incusbr0";
-          type = "bridge";
-          config = {
-            "ipv4.address" = "10.0.100.1/24";
-            "ipv4.nat" = "true";
-          };
-        }
+  # Graphics
+  nixpkgs.config.packageOverrides = pkgs: {
+      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    };
+    hardware.graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver
+        intel-vaapi-driver # previously vaapiIntel
+        vaapiVdpau
+        libvdpau-va-gl
+        intel-compute-runtime # OpenCL filter support (hardware tonemapping and subtitle burn-in)
+        vpl-gpu-rt # QSV on 11th gen or newer
+        intel-media-sdk # QSV up to 11th gen
       ];
+    };
 
-      profiles = [
-        {
-          name = "default";
-          devices = {
-            eth0 = {
-              name = "eth0";
-              parent = "bridge0";
-              type = "nic";
-              nictype = "bridged";
-            };
-            root = {
-              path = "/";
-              pool = "default";
-              size = "35GiB";
-              type = "disk";
-            };
-          };
-        }
-      ];
 
-      storage_pools = [
-        {
-          name = "default";
-          driver = "dir";
-          config = {
-            source = "/var/lib/incus/storage-pools/default";
-          };
-        }
-      ];
+  # Services
+  services.jellyfin.enable = true;
+  services.mealie.enable = true;
+  services.scrutiny.enable = true;
 
+  # Syncthing
+  services = {
+    syncthing = {
+        enable = true;
+        group = "users";
+        user = "dolf";
+	guiAddress = "0.0.0.0:8384";
+        dataDir = "/home/dolf/";
+        configDir = "/home/dolf/.config/syncthing";
     };
   };
- 
-  # Neovim
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-   # plugins = [ pkgs.vimPlugins.nvim-treesitter.withAllGrammars ];
-  };
 
-  # Fish shell
-  programs.fish.enable = true;
-  
-  # Launch fish from bash (prevents warning https://fishshell.com/docs/current/index.html#default-shell)
-  programs.fish.shellAliases = {
-    rr = "sudo nixos-rebuild switch";
-    ll = "ls -alh";
-  };
-  programs.bash = {
-    interactiveShellInit = ''
-      if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
-      then
-        shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-        exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
-      fi
-    '';
-  };
-
-  # Tailscale 
+  # Tailscale
   services.tailscale.enable = true;
   services.tailscale.useRoutingFeatures = "server";
 
@@ -181,7 +139,63 @@
     '';
   };
 
+  #Homepage
+  services.homepage-dashboard.enable = true;
+  services.homepage-dashboard.widgets = [
+    {
+      resources = {
+        cpu = true;
+        disk = "/";
+        memory = true;
+      };
+    }
+    {
+      search = {
+        provider = "duckduckgo";
+        target = "_blank";
+      };
+     }
+    {
+      widget = {
+        type = "scrutiny";
+        url = "http://nwa:8080";
+      };
+    }
+  ];
 
+
+  virtualisation.docker.rootless = {
+    enable = true;
+    setSocketVariable = true;
+  };
+  
+  # Programs
+  # Neovim
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+   # plugins = [ pkgs.vimPlugins.nvim-treesitter.withAllGrammars ];
+  };
+
+  # Fish shell
+  programs.fish.enable = true;
+
+  # Launch fish from bash (prevents warning https://fishshell.com/docs/current/index.html#default-shell)
+  programs.fish.shellAliases = {
+    rr = "sudo nixos-rebuild switch";
+    ll = "ls -alh";
+  };
+  programs.bash = {
+    interactiveShellInit = ''
+      if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
+      then
+        shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+        exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
+      fi
+    '';
+  };
+
+  
   # SMB shares
   fileSystems."/mnt/smb/media" = {
     device = "//nas/data/media";
@@ -192,7 +206,7 @@
 
       in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
   };
-   
+
   fileSystems."/mnt/smb/docker" = {
     device = "//nas/docker";
     fsType = "cifs";
@@ -207,16 +221,12 @@
     fsType = "nfs";
   };
 
-  fileSystems."/mnt/media" = { 
-    device = "nas:/volume1/data"; 
-    fsType = "nfs"; 
+  fileSystems."/mnt/media" = {
+    device = "nas:/volume1/data";
+    fsType = "nfs";
   };
 
-  # Copy the NixOS configuration file and link it from the resulting system
-  # (/run/current-system/configuration.nix). This is useful in case you
-  # accidentally delete configuration.nix.
-  # system.copySystemConfiguration = true;
-
-  system.stateVersion = "24.11"; # Did you read the comment?
-
+  # Can't touch this
+  system.stateVersion = "24.11";
 }
+
