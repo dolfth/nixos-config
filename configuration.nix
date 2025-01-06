@@ -24,7 +24,17 @@
 ##### File Systems #############################################################
 
   fileSystems."/mnt/media" = {
-    device = "//nas/data/media";
+    device = "//nas/data/";
+    fsType = "cifs";
+    options = let
+      # this line prevents hanging on network split
+      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+
+      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+  };
+
+  fileSystems."/mnt/docker" = {
+    device = "//nas/docker";
     fsType = "cifs";
     options = let
       # this line prevents hanging on network split
@@ -40,19 +50,11 @@
 
   zramSwap.enable = true;
 
-  nixpkgs.config.packageOverrides = pkgs: {
-      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-    };
     hardware.graphics = {
       enable = true;
       extraPackages = with pkgs; [
         intel-media-driver
-        intel-vaapi-driver # previously vaapiIntel
-        vaapiVdpau
-        libvdpau-va-gl
-        intel-compute-runtime # OpenCL filter support (hardware tonemapping and subtitle burn-in)
-        vpl-gpu-rt # QSV on 11th gen or newer
-        intel-media-sdk # QSV up to 11th gen
+        intel-compute-runtime
       ];
     };
 
@@ -69,6 +71,10 @@
   networking = {
     hostName = "nwa";
     hostId = "04ef5600";
+    interfaces.en02.ipv4.addresses = [{
+      address = "192.168.2.115";
+      prefixLength = 24;
+    }];
     #useDHCP = false;
     #bridges."bridge0".interfaces = [ "eno2" ];
     #interfaces."bridge0".useDHCP = true;
@@ -80,10 +86,24 @@
 
   users.users."dolf"= {
     isNormalUser = true;
+    uid = 1000;
+    group = "dolf";
     description = "Dolf ter Hofste";
-    extraGroups = [ "wheel" "docker" ];
+    extraGroups = [ "wheel" "docker" "users" ];
     packages = with pkgs; [];
   };
+
+  users.users."docker"= {
+    isNormalUser = true;
+    uid = 1003;
+    group = "docker";
+    extraGroups = [ "users" ];
+    packages = with pkgs; [];
+    shell = pkgs.fish;
+  };
+
+  users.groups.dolf.gid = 1000;
+  #users.groups.docker.gid = 1003;
 
   # Enable automatic login for the user.
   services.getty.autologinUser = "dolf";
@@ -97,6 +117,9 @@
     docker-compose
     git
     htop
+    jellyfin
+    jellyfin-web
+    jellyfin-ffmpeg
     jq
     lshw
     parted
@@ -113,7 +136,7 @@
     starship.presets = [ "tokyo-night" ];
     fish.enable = true;
     fish.shellAliases = {
-      cc = "sudo vim /etc/nixos/configuration.nix";
+      cc = "nvim /etc/nixos/configuration.nix";
       rr = "sudo nixos-rebuild switch";
       ll = "ls -alh";
      };
@@ -123,24 +146,71 @@
 
   services = {
 
-    jellyfin.enable = true;
-    mealie.enable = true;
     scrutiny.enable = true;
+
+    jellyfin.enable = true;
+    plex.enable = true;
+    radarr.enable = true;
 
     homepage-dashboard = {
       enable = true;
+      settings = {
+        title = "nwa";
+        background = {
+          image = "https://vsthemes.org/uploads/posts/2022-04/1650638025_22-04-2022-19_32_45.webp";
+          opacity = 75;
+          brightness = 50;
+        };
+        theme = "dark";
+        color = "stone";
+        headerStyle = "clean";
+        target = "_blank";
+        layout."Main" = {
+          style = "row";
+          columns = 4;
+        };
+      };
+      services = [
+        {
+          Server = [
+            {
+              scrutiny = {
+                description = "Drive health";
+                href = "https://${config.networking.hostName}.foxhound-insen.ts.net:8080";
+                icon = "scrutiny.svg";
+                widget = {
+                  type = "scrutiny";
+                  url = "http://localhost:8080";
+                };
+              };
+            }
+          ];
+        }
+        {
+          Media = [
+            {
+              Plex = {
+                description = "Media Server";
+                href = "https://${config.networking.hostName}.foxhound-insen.ts.net:32400";
+                icon = "plex.svg";
+                widget = {
+                  key = "{{HOMEPAGE_VAR_PLEX}}";
+                  type = "plex";
+                  url = "http://localhost:32400";
+                };
+              };
+            }
+          ];
+        }
+      ];
       widgets = [
         {
           resources = {
+            label = "System";
             cpu = true;
             disk = "/";
             memory = true;
-          };
-        }
-        {
-          search = {
-            provider = "duckduckgo";
-            target = "_blank";
+            uptime = true;
           };
         }
       ];
@@ -164,7 +234,7 @@
         folders = {
           "Documents" = {
             path = "/home/dolf/Documents";
-	    devices = [ "gza" "nas" ];
+            devices = [ "gza" "nas" ];
           };
         };
       };
@@ -215,9 +285,15 @@
   };
 ##### Containers ###############################################################
 
-  virtualisation.docker.rootless = {
+  virtualisation.docker = {
     enable = true;
-    setSocketVariable = true;
+    daemon.settings = {
+      userland-proxy = false;
+      experimental = true;
+      metrics-addr = "0.0.0.0:9323";
+      ipv6 = true;
+      fixed-cidr-v6 = "fd00::/80";
+    };
   };
 
 ##### Voodoo ###################################################################
