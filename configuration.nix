@@ -271,6 +271,65 @@
         };
       };
     };
+    
+    samba = {
+      enable = true;
+      nsswins = false;
+      nmbd.enable = false;
+      openFirewall = true;
+      settings.global = {
+        "server smb encrypt" = "required";
+	"server string" = "nwa";
+        "fruit:model" = "MacPro";
+	"fruit:metadata" = "stream";
+        "fruit:veto_appledouble" = "no";
+        "fruit:nfs_aces" = "no";
+        "fruit:wipe_intentionally_left_blank_rfork" = "yes"; 
+        "fruit:delete_empty_adfiles" = "yes";
+        "vfs objects" = "catia fruit streams_xattr";
+      };
+      settings.backup = {
+        "path" = "/backup/dolf";
+        "valid users" = "dolf";
+        "force user" = "dolf";
+        #"force group" = "username";
+        "public" = "no";
+        "writeable" = "yes";
+        "fruit:time machine" = "yes";
+	"fruit:time machine max size" = "2T";
+      };
+    };
+
+    # Ensure Time Machine can discover the share without `tmutil`
+    avahi = {
+      enable = true;
+      publish.enable = true;
+      publish.userServices = true;
+      openFirewall = true;
+      extraServiceFiles = {
+        timemachine = ''
+          <?xml version="1.0" standalone='no'?>
+          <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+          <service-group>
+            <name replace-wildcards="yes">%h</name>
+            <service>
+              <type>_smb._tcp</type>
+              <port>445</port>
+            </service>
+              <service>
+              <type>_device-info._tcp</type>
+              <port>0</port>
+              <txt-record>model=TimeCapsule8,119</txt-record>
+            </service>
+            <service>
+              <type>_adisk._tcp</type>
+              <txt-record>dk0=adVN=tm_share,adVF=0x82</txt-record>
+              <txt-record>sys=waMa=0,adVF=0x100</txt-record>
+            </service>
+          </service-group>
+        '';
+      };
+    };
 
     zfs = {
       autoScrub.enable = true;
