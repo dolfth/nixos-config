@@ -3,9 +3,7 @@
   description = "flake for nwa";
 
   inputs = {
-    nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-unstable";
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
   outputs = { self, nixpkgs }: {
@@ -13,7 +11,8 @@
       nwa = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
-          ./configuration.nix
+	  ./configuration.nix
+	   ./hardware-configuration.nix
         ];
       };
     };
