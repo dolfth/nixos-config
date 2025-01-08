@@ -145,7 +145,8 @@
 ##### Services #################################################################
 
   services = {
-
+    
+    lldap.enable = true;
     scrutiny.enable = true;
 
     jellyfin.enable = true;
