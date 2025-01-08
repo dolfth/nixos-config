@@ -30,18 +30,20 @@
       # this line prevents hanging on network split
       automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
-      in ["${automount_opts},credentials=./smb-secrets,uid=1000,gid=100"];
+      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
   };
 
-  fileSystems."/mnt/docker" = {
-    device = "//nas/docker";
-    fsType = "cifs";
-    options = let
-      # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
-      in ["${automount_opts},credentials=./smb-secrets,uid=1000,gid=100"];
-  };
+#  fileSystems."/mnt/docker" = {
+#    device = "//nas/docker";
+#    fsType = "cifs";
+#    options = let
+#      # this line prevents hanging on network split
+#      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+#
+#      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
+#  };
+
 
 ##### Hardware and Graphics ####################################################
 
