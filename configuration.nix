@@ -137,7 +137,7 @@
     fish.enable = true;
     fish.shellAliases = {
       cc = "nvim /etc/nixos/configuration.nix";
-      rr = "sudo nixos-rebuild switch";
+      rr = "sudo nixos-rebuild switch --flake";
       ll = "ls -alh";
      };
   };
