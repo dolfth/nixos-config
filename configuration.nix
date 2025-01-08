@@ -5,6 +5,8 @@
       ./hardware-configuration.nix
     ];
 
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
 ##### Boot Settings ############################################################
 
   # Use the systemd-boot EFI boot loader.
@@ -242,13 +244,16 @@
 
     tailscale = {
       enable = true;
+      extraUpFlags = [ "--ssh" ];
       useRoutingFeatures = "server";
     };
-
+    
+    # ZFS snapshots
     sanoid = {
       enable = true;
       interval = "hourly";
       templates = {
+
         frequent = {
             hourly = 24;
             daily = 7;
@@ -264,11 +269,17 @@
           autoprune = true;
           autosnap = true;
         };
+
       };
       datasets = {
-        "rpool/home" = {
+        
+	"rpool/home" = {
           useTemplate = ["frequent"];
         };
+
+        "rpool/persist" = {
+          useTemplate = ["recent"];
+	};
       };
     };
     
@@ -280,6 +291,7 @@
       nmbd.enable = false;
       openFirewall = true;
       settings.global = {
+
         "server smb encrypt" = "required";
 	"server string" = "nwa";
         "fruit:model" = "MacPro";
@@ -290,6 +302,7 @@
         "fruit:delete_empty_adfiles" = "yes";
         "vfs objects" = "catia fruit streams_xattr";
       };
+
       settings.backup = {
         "path" = "/backup/dolf";
         "valid users" = "dolf";
