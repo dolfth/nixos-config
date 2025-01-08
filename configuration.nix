@@ -30,7 +30,7 @@
       # this line prevents hanging on network split
       automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
-      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+      in ["${automount_opts},credentials=./smb-secrets,uid=1000,gid=100"];
   };
 
   fileSystems."/mnt/docker" = {
@@ -40,7 +40,7 @@
       # this line prevents hanging on network split
       automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
-      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+      in ["${automount_opts},credentials=./smb-secrets,uid=1000,gid=100"];
   };
 
 ##### Hardware and Graphics ####################################################
@@ -140,13 +140,14 @@
       rr = "sudo nixos-rebuild switch --flake";
       ll = "ls -alh";
      };
+    bat.enable = true;
   };
 
 ##### Services #################################################################
 
   services = {
     
-    lldap.enable = true;
+    #lldap.enable = true;
     scrutiny.enable = true;
 
     jellyfin.enable = true;
