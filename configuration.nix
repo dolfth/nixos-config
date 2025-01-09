@@ -130,8 +130,6 @@
     parted
     sanoid
     smartmontools
-
-    # inputs.nixvim.packages."${pkgs.system}"
   ];
 
   ##### Programs #################################################################
