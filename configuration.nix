@@ -1,12 +1,17 @@
 { config, lib, pkgs, inputs, ... }:
 
 {
-  imports = [ 
-    #./hardware-configuration.nix 
-    #./programs
-  ];
+  imports = [
+    ./hardware-configuration.nix
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+    ./services/homepage.nix
+    ./services/samba.nix
+    ./services/sanoid.nix
+    ./services/syncthing.nix
+    ./services/tailscale.nix
+    ./services/zfs.nix
+
+  ];
 
 ##### Boot Settings ############################################################
 
@@ -26,26 +31,26 @@
 
 ##### File Systems #############################################################
 
-#  fileSystems."/mnt/media" = {
-#    device = "//nas/data/";
-#    fsType = "cifs";
-#    options = let
-#      # this line prevents hanging on network split
-#      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
-#
-#      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
-#  };
+  fileSystems."/mnt/media" = {
+    device = "//nas/data/";
+    fsType = "cifs";
+    options = let
+      # this line prevents hanging on network split
+      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+
+      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
+  };
 
 
-#  fileSystems."/mnt/docker" = {
-#    device = "//nas/docker";
-#    fsType = "cifs";
-#    options = let
-#      # this line prevents hanging on network split
-#      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
-#
-#      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
-#  };
+  fileSystems."/mnt/docker" = {
+    device = "//nas/docker";
+    fsType = "cifs";
+    options = let
+      # this line prevents hanging on network split
+      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+
+      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
+  };
 
 
 ##### Hardware and Graphics ####################################################
@@ -118,7 +123,6 @@
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     cifs-utils
-    cockpit
     docker-compose
     git
     htop
@@ -135,6 +139,7 @@
   ##### Programs #################################################################
 
   programs = {
+    bat.enable = true;
     neovim.enable = true;
     neovim.defaultEditor = true;
     starship.enable = true;
@@ -145,200 +150,19 @@
       rr = "sudo nixos-rebuild switch --flake";
       ll = "ls -alh";
      };
-    bat.enable = true;
   };
 
 ##### Services #################################################################
 
   services = {
-    
     #lldap.enable = true;
     scrutiny.enable = true;
 
     jellyfin.enable = true;
     plex.enable = true;
     radarr.enable = true;
+  }
 
-    homepage-dashboard = {
-      enable = true;
-      settings = {
-        title = "nwa";
-        background = {
-          image = "https://vsthemes.org/uploads/posts/2022-04/1650638025_22-04-2022-19_32_45.webp";
-          opacity = 75;
-          brightness = 50;
-        };
-        theme = "dark";
-        color = "stone";
-        headerStyle = "clean";
-        target = "_blank";
-        layout."Main" = {
-          style = "row";
-          columns = 4;
-        };
-      };
-      services = [
-        {
-          Server = [
-            {
-              scrutiny = {
-                description = "Drive health";
-                href = "https://${config.networking.hostName}.foxhound-insen.ts.net:8080";
-                icon = "scrutiny.svg";
-                widget = {
-                  type = "scrutiny";
-                  url = "http://localhost:8080";
-                };
-              };
-            }
-          ];
-        }
-        {
-          Media = [
-            {
-              Plex = {
-                description = "Media Server";
-                href = "https://${config.networking.hostName}.foxhound-insen.ts.net:32400";
-                icon = "plex.svg";
-                widget = {
-                  key = "{{HOMEPAGE_VAR_PLEX}}";
-                  type = "plex";
-                  url = "http://localhost:32400";
-                };
-              };
-            }
-          ];
-        }
-      ];
-      widgets = [
-        {
-          resources = {
-            label = "System";
-            cpu = true;
-            disk = "/";
-            memory = true;
-            uptime = true;
-          };
-        }
-      ];
-    };
-
-    syncthing = {
-      enable = true;
-      group = "users";
-      user = "dolf";
-      guiAddress = "0.0.0.0:8384";
-      openDefaultPorts = true;
-      dataDir = "/home/dolf/";
-      configDir = "/home/dolf/.config/syncthing";
-      overrideDevices = true;
-      overrideFolders = true;
-      settings = {
-        devices = {
-          "gza" = { id = "Z5EGWQK-ZS2DGQC-WJ4BKMS-4EMWVJH-YSX43YL-X44QTRQ-DCWYIBF-BD3NTAT"; };
-          "nas" = { id = "TONHWXI-TTLGRND-MJ54BVE-UW3NLSR-AR24U7N-3PXKIHU-I66I3QX-AQLDBQ7"; };
-        };
-        folders = {
-          "Documents" = {
-            path = "/home/dolf/Documents";
-            devices = [ "gza" "nas" ];
-          };
-        };
-      };
-    };
-
-    tailscale = {
-      enable = true;
-      extraUpFlags = [ "--ssh" ];
-      useRoutingFeatures = "server";
-    };
-    
-    # ZFS snapshots
-    sanoid = {
-      enable = true;
-      interval = "hourly";
-      templates = {
-
-        frequent = {
-            hourly = 24;
-            daily = 7;
-            monthly = 12;
-            yearly = 2;
-            autoprune = true;
-            autosnap = true;
-          };
-
-        recent = {
-          hourly = 24;
-          daily = 7;
-          autoprune = true;
-          autosnap = true;
-        };
-
-      };
-      datasets = {
-        
-	"rpool/home" = {
-          useTemplate = ["frequent"];
-        };
-
-        "rpool/persist" = {
-          useTemplate = ["recent"];
-	};
-      };
-    };
-    
-    # Samba users are independent of system users.
-    # https://wiki.samba.org/index.php/Configure_Samba_to_Work_Better_with_Mac_OS_X
-    samba = {
-      enable = true;
-      nsswins = false;
-      nmbd.enable = false;
-      openFirewall = true;
-      settings.global = {
-
-        "server smb encrypt" = "required";
-	"server string" = "nwa";
-        "fruit:model" = "MacPro";
-	"fruit:metadata" = "stream";
-        "fruit:veto_appledouble" = "no";
-        "fruit:nfs_aces" = "no";
-        "fruit:wipe_intentionally_left_blank_rfork" = "yes"; 
-        "fruit:delete_empty_adfiles" = "yes";
-        "vfs objects" = "catia fruit streams_xattr";
-      };
-
-      settings.backup = {
-        "path" = "/backup/dolf";
-        "valid users" = "dolf";
-        "force user" = "dolf";
-        #"force group" = "username";
-        "public" = "no";
-        "writeable" = "yes";
-        "fruit:time machine" = "yes";
-	"fruit:time machine max size" = "1500G";
-      };
-    };
-
-    # for zeroconf (Bonjour) networking
-    avahi = {
-      enable = true;
-      publish.enable = true;
-      publish.userServices = true;
-      openFirewall = true;
-    };
-
-    zfs = {
-      autoScrub.enable = true;
-      trim.enable = true;
-      zed.settings = {
-        ZED_NOTIFY_INTERVAL_SECS=3600;
-        ZED_NTFY_TOPIC = "c22c0a8c-981d-471f-9cae-f36e4c89f19d";
-        ZED_NOTIFY_VERBOSE = true;
-        ZED_SCRUB_AFTER_RESILVER = true;
-      };
-    };
-  };
 ##### Containers ###############################################################
 
   virtualisation.docker = {
@@ -354,7 +178,7 @@
 
 ##### Voodoo ###################################################################
 
-  # Launch fish from bash 
+  # Launch fish from bash
   # prevents https://fishshell.com/docs/current/index.html#default-shell
 
   programs.bash = {
