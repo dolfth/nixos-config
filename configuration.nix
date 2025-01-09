@@ -6,7 +6,6 @@
 
     ./programs/nixvim.nix
     ./programs/fish.nix
-    ./programs/sops-nix.nix
 
     ./services/homepage.nix
     ./services/samba.nix
@@ -17,6 +16,7 @@
 
   ];
 
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 ##### Boot Settings ############################################################
 
   # Use the systemd-boot EFI boot loader.
@@ -144,7 +144,7 @@
   programs = {
     bat.enable = true;
     starship.enable = true;
-    starship.presets = [ "tokyo-night" ];
+    starship.presets = [ "gruvbox-rainbow" ];
   };
 
 ##### Services #################################################################
