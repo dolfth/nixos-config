@@ -4,6 +4,8 @@
   imports = [
     ./hardware-configuration.nix
 
+    ./programs/nixvim.nix
+
     ./services/homepage.nix
     ./services/samba.nix
     ./services/sanoid.nix
@@ -41,7 +43,6 @@
       in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
   };
 
-
   fileSystems."/mnt/docker" = {
     device = "//nas/docker";
     fsType = "cifs";
@@ -51,7 +52,6 @@
 
       in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
   };
-
 
 ##### Hardware and Graphics ####################################################
 
@@ -140,14 +140,12 @@
 
   programs = {
     bat.enable = true;
-    neovim.enable = true;
-    neovim.defaultEditor = true;
     starship.enable = true;
     starship.presets = [ "tokyo-night" ];
     fish.enable = true;
     fish.shellAliases = {
       cc = "nvim /etc/nixos/configuration.nix";
-      rr = "sudo nixos-rebuild switch --flake";
+      rr = "sudo nixos-rebuild switch";
       ll = "ls -alh";
      };
   };
@@ -157,11 +155,10 @@
   services = {
     #lldap.enable = true;
     scrutiny.enable = true;
-
     jellyfin.enable = true;
     plex.enable = true;
     radarr.enable = true;
-  }
+  };
 
 ##### Containers ###############################################################
 
