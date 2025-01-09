@@ -6,9 +6,9 @@
 
     ./programs/nixvim.nix
     ./programs/fish.nix
+    ./programs/sops-nix.nix
 
     ./services/homepage.nix
-    ./services/lldap.nix
     ./services/samba.nix
     ./services/sanoid.nix
     ./services/syncthing.nix
@@ -133,6 +133,7 @@
     jellyfin-ffmpeg
     jq
     lshw
+    mealie
     parted
     sanoid
     smartmontools
@@ -149,7 +150,7 @@
 ##### Services #################################################################
 
   services = {
-    #lldap.enable = true;
+    mealie.enable = true;
     scrutiny.enable = true;
     jellyfin.enable = true;
     plex.enable = true;
