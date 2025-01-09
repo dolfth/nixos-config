@@ -5,8 +5,10 @@
     ./hardware-configuration.nix
 
     ./programs/nixvim.nix
+    ./programs/fish.nix
 
     ./services/homepage.nix
+    ./services/lldap.nix
     ./services/samba.nix
     ./services/sanoid.nix
     ./services/syncthing.nix
@@ -142,12 +144,6 @@
     bat.enable = true;
     starship.enable = true;
     starship.presets = [ "tokyo-night" ];
-    fish.enable = true;
-    fish.shellAliases = {
-      cc = "nvim /etc/nixos/configuration.nix";
-      rr = "sudo nixos-rebuild switch";
-      ll = "ls -alh";
-     };
   };
 
 ##### Services #################################################################
