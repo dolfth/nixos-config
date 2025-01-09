@@ -1,7 +1,10 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 {
-  # imports = [ ./hardware-configuration.nix ];
+  imports = [ 
+    #./hardware-configuration.nix 
+    #./programs
+  ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -127,6 +130,8 @@
     parted
     sanoid
     smartmontools
+
+    # inputs.nixvim.packages."${pkgs.system}"
   ];
 
   ##### Programs #################################################################

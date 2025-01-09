@@ -4,13 +4,18 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    impermanence.url = "github:Nix-community/impermanence";
+    
+    nixvim = {
+      url = "github:nix-community/nixvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs }: {
+  outputs = { nixpkgs, nixvim, ... } @inputs: {
     nixosConfigurations = {
       nwa = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+	specialArgs = { inherit inputs; };
         modules = [
 	  ./configuration.nix
 	  ./hardware-configuration.nix
