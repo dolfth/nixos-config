@@ -1,4 +1,5 @@
 { config, pkgs, ... }:
+
 {
   # Samba users are independent of system users.
   # https://wiki.samba.org/index.php/Configure_Samba_to_Work_Better_with_Mac_OS_X

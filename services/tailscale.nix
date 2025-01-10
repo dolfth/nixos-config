@@ -1,4 +1,5 @@
-{ config, lib, pkgs, modulesPath, ... }:
+{ config, pkgs, ... }:
+
 {
   services.tailscale = {
     enable = true;

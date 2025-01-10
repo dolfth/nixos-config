@@ -1,4 +1,5 @@
-{ config, lib, pkgs, modulesPath, ... }:
+{ config, pkgs, ... }:
+
 {
   # ZFS notifications
   services.zfs = {

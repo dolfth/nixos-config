@@ -1,4 +1,5 @@
-{ config, lib, pkgs, modulesPath, ... }:
+{ config, pkgs, ... }:
+
 {
   # ZFS snapshots
   services.sanoid = {

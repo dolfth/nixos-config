@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
 
-    ./programs/nixvim.nix
+    #./programs/nixvim.nix
     ./programs/fish.nix
 
     ./services/homepage.nix
@@ -123,6 +123,7 @@
 ##### Packages #################################################################
 
   nixpkgs.config.allowUnfree = true;
+
   environment.systemPackages = with pkgs; [
     cifs-utils
     docker-compose
@@ -134,18 +135,11 @@
     jq
     lshw
     mealie
+
     parted
     sanoid
     smartmontools
   ];
-
-  ##### Programs #################################################################
-
-  programs = {
-    bat.enable = true;
-    starship.enable = true;
-    starship.presets = [ "gruvbox-rainbow" ];
-  };
 
 ##### Services #################################################################
 
