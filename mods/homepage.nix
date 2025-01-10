@@ -1,6 +1,6 @@
 { config, pkgs, ... }:
 
-{
+{config = {
     services.homepage-dashboard = {
       enable = true;
       settings = {
@@ -64,4 +64,5 @@
         }
       ];
     };
+};
 }

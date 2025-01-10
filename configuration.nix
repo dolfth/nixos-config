@@ -1,20 +1,22 @@
 { config, lib, pkgs, inputs, ... }:
 
+let
+  user="dolf";
+in
+
 {
   imports = [
     ./hardware-configuration.nix
-
-    #./programs/nixvim.nix
-    ./programs/fish.nix
-
-    ./services/homepage.nix
-    ./services/samba.nix
-    ./services/sanoid.nix
-    ./services/syncthing.nix
-    ./services/tailscale.nix
-    ./services/zfs.nix
-
+    ./mods/nixvim.nix
+    ./mods/fish.nix
+    ./mods/homepage.nix
+    ./mods/samba.nix
+    ./mods/syncthing.nix
+    ./mods/tailscale.nix
+    ./mods/zfs.nix
   ];
+
+
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 ##### Boot Settings ############################################################
@@ -35,24 +37,42 @@
 
 ##### File Systems #############################################################
 
+  sops = {
+    defaultSopsFile = ./secrets/secrets.yaml;
+    defaultSopsFormat = "yaml";
+    age.keyFile = "/home/dolf/.config/sops/age/keys.txt";
+    secrets.samba_username ={};
+    secrets.samba_password ={};
+    templates."samba-credentials".content = ''
+      username=${config.sops.placeholder.samba_username}
+      password=${config.sops.placeholder.samba_password}
+    '';
+    };
+
   fileSystems."/mnt/media" = {
     device = "//nas/data/";
     fsType = "cifs";
-    options = let
-      # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+    options = 
+      let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
-      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
+      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.${user}.uid},gid=${toString config.users.groups.${user}.gid}"];
   };
 
   fileSystems."/mnt/docker" = {
     device = "//nas/docker";
     fsType = "cifs";
-    options = let
-      # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+    options = 
+      let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
-      in ["${automount_opts},credentials=./smb-secrets,uid=${toString config.users.users.dolf.uid},gid=${toString config.users.groups.dolf.gid}"];
+      in ["${automount_opts}"
+      "credentials=${config.sops.templates.samba-credentials.path}"
+      "uid=${toString config.users.users.${user}.uid}"
+      "gid=${toString config.users.groups.${user}.gid}"
+      ];
   };
 
 ##### Hardware and Graphics ####################################################
@@ -96,7 +116,7 @@
 
 ##### User Accounts ############################################################
 
-  users.users."dolf"= {
+  users.users.${user}= {
     isNormalUser = true;
     uid = 1000;
     group = "dolf";
@@ -111,7 +131,6 @@
     group = "docker";
     extraGroups = [ "users" ];
     packages = with pkgs; [];
-    shell = pkgs.fish;
   };
 
   users.groups.dolf.gid = 1000;
@@ -139,6 +158,7 @@
     parted
     sanoid
     smartmontools
+    sops
   ];
 
 ##### Services #################################################################

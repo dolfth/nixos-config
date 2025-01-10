@@ -32,7 +32,7 @@
     };
   };
 
-  # for zeroconf (Bonjour) networking
+  # Network discovery via zeroconf (Bonjour) networking
   services.avahi = {
     enable = true;
     publish.enable = true;

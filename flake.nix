@@ -10,13 +10,14 @@
     };
   };
 
-  outputs = { self, nixpkgs, sops-nix, ... }@inputs: {
+  outputs = { self, nixpkgs, nixvim, sops-nix, ... }@inputs: {
     nixosConfigurations.nwa = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
         ./configuration.nix
         sops-nix.nixosModules.sops
+        nixvim.nixosModules.nixvim
       ];
     };
   };
