@@ -1,6 +1,11 @@
 { config, pkgs, ... }:
 
 {config = {
+
+    sops = {
+      secrets."adguard/username" ={};
+      secrets."adguard/password" ={};
+    };
     services.homepage-dashboard = {
       enable = true;
       settings = {
@@ -25,11 +30,24 @@
             {
               scrutiny = {
                 description = "Drive health";
-                href = "https://${config.networking.hostName}.foxhound-insen.ts.net:8080";
                 icon = "scrutiny.svg";
+                sitemonitor = "https://${config.networking.hostName}.foxhound-insen.ts.net:8080";
                 widget = {
                   type = "scrutiny";
                   url = "http://localhost:8080";
+                };
+              };
+            }
+            {
+              AdguardHome = {
+                description = "DNS filtering";
+                icon = "adguard-home.svg";
+                sitemonitor = "https://${config.networking.hostName}.foxhound-insen.ts.net:3000";
+                widget = {
+                  type = "adguard";
+                  url = "http://localhost:3000";
+                  #username = config.sops.placeholder."adguard/username".path;
+                  #password = config.sops.placeholder."adguard/password".path;
                 };
               };
             }

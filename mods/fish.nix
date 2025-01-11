@@ -5,9 +5,9 @@
     fish = {
       enable = true;
       shellAliases = {
-        cc = "nvim /etc/nixos/configuration.nix";
-        rr = "sudo nixos-rebuild switch";
+        cc = "nvim ~/.config/nixos/configuration.nix";
         ll = "ls -alh";
+	cat = "bat";
       };
     };
     bat.enable = true;
