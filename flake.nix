@@ -3,26 +3,40 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    
+
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixarr.url = "github:rasmus-kirk/nixarr";
 
     nixvim = {
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    sops-nix.url = "github:Mic92/sops-nix";
+
+    sops-nix = {
+      url = "github:mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixarr, nixvim, sops-nix, ... }@inputs: {
-    nixosConfigurations.nwa = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./configuration.nix
-        nixarr.nixosModules.default
-	nixvim.nixosModules.nixvim
-        sops-nix.nixosModules.sops
-      ];
-    };
+  outputs = { self, nixpkgs, microvm, nixarr, nixvim, sops-nix, ... }@inputs: {
+
+    nixosConfigurations =
+      {
+        nwa = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            ./hosts/nwa
+            # microvm.nixosModules.microvm
+            nixarr.nixosModules.default
+            nixvim.nixosModules.nixvim
+            sops-nix.nixosModules.sops
+          ];
+        };
+      };
   };
 }
