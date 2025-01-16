@@ -15,12 +15,6 @@
       devices = {
         "gza" = { id = "Z5EGWQK-ZS2DGQC-WJ4BKMS-4EMWVJH-YSX43YL-X44QTRQ-DCWYIBF-BD3NTAT"; };
       };
-      folders = {
-        "Documents" = {
-          path = "/home/dolf/Documents";
-          devices = [ "gza" ];
-        };
-      };
     };
   };
 }

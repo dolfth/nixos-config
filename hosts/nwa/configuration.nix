@@ -5,7 +5,6 @@ let
 in
 
 {
-
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
 ##### Boot Settings ############################################################
@@ -23,6 +22,9 @@ in
       { devices = ["nodev"]; path ="/boot"; }
     ];
   };
+
+  boot.zfs.extraPools = [ "backup" ];
+
   ##### Hardware and Graphics ####################################################
 
     # Enable zram swap as OpenZFS doesn't support swap on zvols
@@ -88,21 +90,6 @@ in
       password=${config.sops.placeholder."samba/password"}
     '';
     };
-
-  fileSystems."/mnt/media" = {
-    device = "//nas/data/";
-    fsType = "cifs";
-    options =
-      let
-        # this line prevents hanging on network split
-        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
-
-      in ["${automount_opts}"
-      "credentials=${config.sops.templates.samba-credentials.path}"
-      #"uid=${toString config.users.users.${user}.uid}"
-      #"gid=${toString config.users.groups.${user}.gid}"
-      ];
-  };
 
 ##### User Accounts ############################################################
 
