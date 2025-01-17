@@ -8,12 +8,11 @@
 
     ./adguardhome.nix
     ./homepage.nix
-    ./nixarr.nix
+    ./media.nix
     ./samba.nix
     ./scrutiny.nix
     ./syncthing.nix
-    #./webdav.nix
+    ./webdav.nix
     ./zfs.nix
   ];
-
 }

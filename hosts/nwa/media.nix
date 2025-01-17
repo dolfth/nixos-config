@@ -1,6 +1,9 @@
 { config, pkgs, inputs, ... }:
 
 {
+  services.plex.enable = true;
+
+  # Until sonarr/radarr updates upstream
   nixpkgs.config.permittedInsecurePackages = [
             "aspnetcore-runtime-6.0.36"
             "aspnetcore-runtime-wrapped-6.0.36"
@@ -17,7 +20,7 @@
     lidarr.enable = true;
     prowlarr.enable = true;
     radarr.enable = true;
-    readarr.enable = true;
+    readarr.enable = false;
     sonarr.enable = true;
   };
 }

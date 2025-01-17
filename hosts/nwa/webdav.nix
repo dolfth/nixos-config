@@ -1,24 +1,20 @@
 { config, pkgs, ... }:
 
 {
-   sops.secrets.webdav = {
-      sopsFile = ./secrets/webdav.env;
-      format = "binary";
-  };
+  sops.secrets.webdav = { };
 
   services.webdav = {
     enable = true;
-    user = "syncthing";
     environmentFile = config.sops.secrets.webdav.path;
     settings = {
       address = "0.0.0.0";
       port = 8080;
-      scope = "/var/lib/syncthing/keepass";
+      scope = "/home/dolf/Documents/passwords";
       modify = true;
       auth = true;
       users = [
         {
-          username = "{env}USER";
+          username = "{env}USERNAME";
           password = "{env}PASSWORD";
         }
       ];

@@ -10,7 +10,7 @@
       };
     };
 
-    #bat.enable = true;
+    bat.enable = true;
 
     starship = {
       enable = true;
