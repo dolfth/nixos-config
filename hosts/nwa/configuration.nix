@@ -23,7 +23,7 @@ in
     ];
   };
 
-  boot.zfs.extraPools = [ "backup" ];
+  boot.zfs.extraPools = [ "backup" "tank" ];
 
   ##### Hardware and Graphics ####################################################
 

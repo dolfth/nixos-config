@@ -2,7 +2,7 @@
   description = "NixOS configuration with flakes";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     microvm = {
       url = "github:astro/microvm.nix";
@@ -12,7 +12,7 @@
     nixarr.url = "github:rasmus-kirk/nixarr";
 
     nixvim = {
-      url = "github:nix-community/nixvim/nixos-24.11";
+      url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
