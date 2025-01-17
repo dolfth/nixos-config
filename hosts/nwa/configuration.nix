@@ -53,11 +53,11 @@ in
     networking = {
       hostName = "nwa";
       hostId = "04ef5600";
-      interfaces.en02.ipv4.addresses = [{
-        address = "192.168.2.115";
-        prefixLength = 24;
-      }];
-      #useDHCP = false;
+      #interfaces.eno2.ipv4.addresses = [{
+      #  address = "192.168.2.115";
+      #  prefixLength = 24;
+      #}];
+      useDHCP = true;
       #bridges."bridge0".interfaces = [ "eno2" ];
       #interfaces."bridge0".useDHCP = true;
       firewall.enable = false;
@@ -132,7 +132,6 @@ in
 
   services = {
     mealie.enable = true;
-    scrutiny.enable = true;
     plex.enable = true;
     radarr.enable = true;
   };
