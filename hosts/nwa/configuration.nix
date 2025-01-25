@@ -22,9 +22,15 @@ in
     enable = true;
     zfsSupport = true;
     efiSupport = true;
-    efiInstallAsRemovable = true;
     mirroredBoots = [
-      { devices = ["nodev"]; path ="/boot"; }
+      {
+        devices = [ "nodev" ];
+        path = "/boot1";
+      }
+      {
+        devices = [ "nodev" ];
+        path = "/boot2";
+      }
     ];
   };
 
@@ -78,7 +84,7 @@ in
     uid = 1000;
     group = "dolf";
     description = "Dolf ter Hofste";
-    extraGroups = [ "wheel" "users" ];
+    extraGroups = [ "wheel" "users" "media" ];
     packages = with pkgs; [
       jellyfin
       jellyfin-web

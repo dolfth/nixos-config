@@ -31,13 +31,22 @@
   fileSystems."/home" =
     { device = "rpool/home";
       fsType = "zfs";
+      neededForBoot = true;
     };
 
-  fileSystems."/boot" =
+  fileSystems."/boot1" =
     { device = "/dev/disk/by-uuid/F183-F618";
       fsType = "vfat";
-      options = [ "fmask=0022" "dmask=0022" ];
+      options = [ "fmask=0022" "dmask=0022" "nofail" ];
     };
+
+  fileSystems."/boot2" =
+    { device = "/dev/disk/by-uuid/F47E-5818";
+      fsType = "vfat";
+      options = [ "fmask=0022" "dmask=0022" "nofail" ];
+    };
+
+
 
   swapDevices = [ ];
 
