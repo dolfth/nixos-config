@@ -34,7 +34,7 @@ in
     ];
   };
 
-  boot.zfs.extraPools = [ "backup" "tank" ];
+  boot.zfs.extraPools = [ "tank" ];
 
 ##### Hardware and Graphics ###################################################
 
@@ -64,10 +64,14 @@ in
     networking = {
       hostName = "nwa";
       hostId = "04ef5600";
-      useDHCP = true;
+      useDHCP = false;
+      bridges."bridge0".interfaces = [ "eno2" ];
+      interfaces."bridge0".useDHCP = true;
+      firewall.trustedInterfaces = [ "incusbr*" ];
       firewall.enable = false;
       nftables.enable = true;
     };
+
 
 ##### Secrets #################################################################
 
@@ -84,7 +88,7 @@ in
     uid = 1000;
     group = "dolf";
     description = "Dolf ter Hofste";
-    extraGroups = [ "wheel" "users" "media" ];
+    extraGroups = [ "wheel" "users" "media" "incus-admin"];
     packages = with pkgs; [
       jellyfin
       jellyfin-web
@@ -97,8 +101,8 @@ in
   # Enable automatic login for the user.
   services.getty.autologinUser = "dolf";
 
-##### Packages ################################################################
 
+##### Packages ################################################################
   nixpkgs.config.allowUnfree = true;
 
   environment.systemPackages = with pkgs; [
@@ -106,7 +110,9 @@ in
     dust
     git
     htop
+    iperf3
     jq
+    mosh
     lshw
     parted
     sanoid

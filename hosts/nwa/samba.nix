@@ -30,7 +30,16 @@
       "fruit:time machine" = "yes";
       "fruit:time machine max size" = "1500G";
     };
-  };
+
+    settings.media = {
+      "path" = "/mnt/media";
+      "valid users" = "dolf";
+      "force user" = "streamer";
+      #"force group" = "username";
+      "public" = "no";
+      "writeable" = "yes";
+    };
+};
 
   # Network discovery via zeroconf (Bonjour) networking
   services.avahi = {
