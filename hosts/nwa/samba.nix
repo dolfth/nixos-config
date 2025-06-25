@@ -35,7 +35,7 @@
       "path" = "/mnt/media";
       "valid users" = "dolf";
       "force user" = "streamer";
-      #"force group" = "username";
+      "force group" = "media";
       "public" = "no";
       "writeable" = "yes";
     };

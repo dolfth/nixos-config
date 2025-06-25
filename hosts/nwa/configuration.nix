@@ -64,14 +64,15 @@ in
     networking = {
       hostName = "nwa";
       hostId = "04ef5600";
-      useDHCP = false;
-      bridges."bridge0".interfaces = [ "eno2" ];
-      interfaces."bridge0".useDHCP = true;
-      firewall.trustedInterfaces = [ "incusbr*" ];
-      firewall.enable = false;
       nftables.enable = true;
+      
+      useDHCP = true;
+      # useDHCP = false; 
+      # bridges."bridge0".interfaces = [ "eno2" ];
+      # interfaces."bridge0".useDHCP = true;
+      # firewall.trustedInterfaces = [ "bridge*" ];
+      firewall.enable = false;
     };
-
 
 ##### Secrets #################################################################
 
@@ -108,6 +109,7 @@ in
   environment.systemPackages = with pkgs; [
     cifs-utils
     dust
+    ghostty.terminfo
     git
     htop
     iperf3

@@ -5,34 +5,29 @@
     enable = true;
     package = pkgs.incus;
     preseed = {
-
       networks = [
         {
-          name = "incusbr0";
-          type = "bridge";
           config = {
-	    "ipv4.address" = "auto";
+            "ipv4.address" = "10.0.100.1/24";
             "ipv4.nat" = "true";
-            "ipv6.address" = "auto";
-            "ipv6.nat" = "true";
           };
+          name = "bridge0";
+          type = "bridge";
         }
       ];
-
       profiles = [
         {
           name = "default";
           devices = {
             eth0 = {
               name = "eth0";
-              parent = "incusbridge0";
               type = "nic";
-              nictype = "bridged";
+	      nictype = "bridged";
+              parent = "bridge0";
             };
             root = {
               path = "/";
               pool = "default";
-              size = "35GiB";
               type = "disk";
             };
           };
@@ -42,10 +37,10 @@
       storage_pools = [
         {
           name = "default";
-          driver = "dir";
+          driver = "zfs";
           config = {
-            source = "/var/lib/incus/storage-pools/default";
-          };
+            source = "tank/incus";
+	  };
         }
       ];
 
