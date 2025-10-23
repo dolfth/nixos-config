@@ -8,7 +8,7 @@
 
     ./adguardhome.nix
     ./homepage.nix
-    #./incus.nix
+    ./home-assistant.nix
     ./media.nix
     ./samba.nix
     ./scrutiny.nix

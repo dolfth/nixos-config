@@ -97,7 +97,15 @@ in
     ];
   };
 
+  users.users.emilie= {
+    isNormalUser = true;
+    uid = 1001;
+    group = "emilie";
+    extraGroups = [ "users"];
+  };
+
   users.groups.dolf.gid = 1000;
+  users.groups.emilie.gid = 1001;
 
   # Enable automatic login for the user.
   services.getty.autologinUser = "dolf";
@@ -116,6 +124,7 @@ in
     jq
     mosh
     lshw
+    lsusb
     parted
     sanoid
     smartmontools

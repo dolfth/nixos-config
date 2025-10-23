@@ -11,20 +11,30 @@
     settings.global = {
       "server smb encrypt" = "required";
       "server string" = "nwa";
+      "vfs objects" = "fruit streams_xattr";
       "fruit:model" = "MacPro";
       "fruit:metadata" = "stream";
       "fruit:veto_appledouble" = "no";
       "fruit:nfs_aces" = "no";
       "fruit:wipe_intentionally_left_blank_rfork" = "yes";
       "fruit:delete_empty_adfiles" = "yes";
-      "vfs objects" = "catia fruit streams_xattr";
+      "fruit:posix_rename" = "yes"; 
     };
 
     settings.backup = {
       "path" = "/backup/dolf";
       "valid users" = "dolf";
       "force user" = "dolf";
-      #"force group" = "username";
+      "public" = "no";
+      "writeable" = "yes";
+      "fruit:time machine" = "yes";
+      "fruit:time machine max size" = "1500G";
+    };
+
+    settings.backup-e = {
+      "path" = "/backup/emilie";
+      "valid users" = "emilie";
+      "force user" = "emilie";
       "public" = "no";
       "writeable" = "yes";
       "fruit:time machine" = "yes";
@@ -34,7 +44,7 @@
     settings.media = {
       "path" = "/mnt/media";
       "valid users" = "dolf";
-      "force user" = "streamer";
+      "force user" = "dolf";
       "force group" = "media";
       "public" = "no";
       "writeable" = "yes";
