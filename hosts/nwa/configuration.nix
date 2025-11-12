@@ -65,9 +65,9 @@ in
       hostName = "nwa";
       hostId = "04ef5600";
       nftables.enable = true;
-      
+
       useDHCP = true;
-      # useDHCP = false; 
+      # useDHCP = false;
       # bridges."bridge0".interfaces = [ "eno2" ];
       # interfaces."bridge0".useDHCP = true;
       # firewall.trustedInterfaces = [ "bridge*" ];
@@ -110,7 +110,6 @@ in
   # Enable automatic login for the user.
   services.getty.autologinUser = "dolf";
 
-
 ##### Packages ################################################################
   nixpkgs.config.allowUnfree = true;
 
@@ -124,7 +123,6 @@ in
     jq
     mosh
     lshw
-    lsusb
     parted
     sanoid
     smartmontools
