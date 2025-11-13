@@ -11,6 +11,7 @@
     settings.global = {
       "server smb encrypt" = "required";
       "server string" = "nwa";
+      "min protocol" = "SMB2";
       "vfs objects" = "fruit streams_xattr";
       "fruit:model" = "MacPro";
       "fruit:metadata" = "stream";
@@ -18,7 +19,9 @@
       "fruit:nfs_aces" = "no";
       "fruit:wipe_intentionally_left_blank_rfork" = "yes";
       "fruit:delete_empty_adfiles" = "yes";
-      "fruit:posix_rename" = "yes"; 
+      "fruit:posix_rename" = "yes";
+      "fruit:advertise_fullsync" = "yes";
+      "mdns name" = "mdns";
     };
 
     settings.backup = {
@@ -54,8 +57,40 @@
   # Network discovery via zeroconf (Bonjour) networking
   services.avahi = {
     enable = true;
-    publish.enable = true;
-    publish.userServices = true;
+    nssmdns4 = true;
+    publish = {
+      enable = true;
+      userServices = true;
+      addresses = true;
+      domain = true;
+      hinfo = true;
+      workstation = true;
+    };
+    extraServiceFiles = {
+      smb = ''
+        <?xml version="1.0" standalone='no'?>
+        <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+        <service-group>
+          <name replace-wildcards="yes">%h</name>
+          <service>
+            <type>_smb._tcp</type>
+            <port>445</port>
+          </service>
+          <service>
+            <type>_device-info._tcp</type>
+            <port>9</port>
+            <txt-record>model=MacPro</txt-record>
+          </service>
+          <service>
+            <type>_adisk._tcp</type>
+            <port>9</port>
+            <txt-record>dk0=adVN=backup,adVF=0x82</txt-record>
+            <txt-record>dk1=adVN=backup-e,adVF=0x82</txt-record>
+            <txt-record>sys=adVF=0x100</txt-record>
+          </service>
+        </service-group>
+      '';
+    };
     openFirewall = true;
   };
 }
