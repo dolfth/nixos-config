@@ -65,14 +65,19 @@ in
       hostName = "nwa";
       hostId = "04ef5600";
       nftables.enable = true;
-
-      useDHCP = true;
-      # useDHCP = false;
-      # bridges."bridge0".interfaces = [ "eno2" ];
-      # interfaces."bridge0".useDHCP = true;
-      # firewall.trustedInterfaces = [ "bridge*" ];
+      useNetworkd = true;
       firewall.enable = false;
-    };
+
+      # Create bridge interface with NixOS
+      bridges.br0 = {
+        interfaces = [ "eno2" ];  # Your ethernet interface
+      };
+
+      # Configure bridge with DHCP, ip address fxed by router 
+      interfaces.br0 = {
+        useDHCP = true;
+          };
+      };
 
 ##### Secrets #################################################################
 

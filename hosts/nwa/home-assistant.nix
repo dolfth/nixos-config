@@ -3,6 +3,7 @@
 {
   services.home-assistant = {
     enable = true;
+  
     extraComponents = [
       # Components required to complete the onboarding
       "analytics"
@@ -22,7 +23,7 @@
       "isal"
     ];
     config = {
-
+      
       # Explicitly disable shopping list
       todo = null;
 

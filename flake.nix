@@ -4,11 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    microvm = {
-      url = "github:astro/microvm.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nixarr.url = "github:rasmus-kirk/nixarr";
 
     nixvim = {
@@ -22,7 +17,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, microvm, nixarr, nixvim, sops-nix, ... }@inputs: {
+  outputs = { self, nixpkgs, nixarr, nixvim, sops-nix, ... }@inputs: {
 
     nixosConfigurations =
       {
@@ -31,7 +26,6 @@
           specialArgs = { inherit inputs; };
           modules = [
             ./hosts/nwa
-            # microvm.nixosModules.microvm
             nixarr.nixosModules.default
             nixvim.nixosModules.nixvim
             sops-nix.nixosModules.sops

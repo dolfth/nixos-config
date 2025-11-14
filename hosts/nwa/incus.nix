@@ -7,12 +7,12 @@
     preseed = {
       networks = [
         {
+          name = "incusbr0";
+          type = "bridge";
           config = {
             "ipv4.address" = "10.0.100.1/24";
             "ipv4.nat" = "true";
           };
-          name = "bridge0";
-          type = "bridge";
         }
       ];
       profiles = [
@@ -22,8 +22,7 @@
             eth0 = {
               name = "eth0";
               type = "nic";
-	      nictype = "bridged";
-              parent = "bridge0";
+	      network = "incusbr0";
             };
             root = {
               path = "/";
