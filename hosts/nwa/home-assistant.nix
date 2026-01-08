@@ -84,6 +84,8 @@
           trigger = {
             platform = "sun";
             event = "sunset";
+	    offset = "-00:30:00";
+
           };
           action = {
             service = "light.turn_on";
@@ -135,6 +137,7 @@
           trigger = {
             platform = "sun";
             event = "sunset";
+	    offset = "-00:30:00";
           };
           action = {
             service = "switch.turn_on";

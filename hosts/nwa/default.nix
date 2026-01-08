@@ -6,7 +6,6 @@
     ./configuration.nix
     ./hardware-configuration.nix
 
-    ./adguardhome.nix
     ./homepage.nix
     ./home-assistant.nix
     ./incus.nix

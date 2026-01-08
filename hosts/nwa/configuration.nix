@@ -79,6 +79,21 @@ in
           };
       };
 
+      systemd.services.fix-eno2-hang = {
+        description = "Disable TSO/GSO/EEE on eno2 to prevent hardware hang";
+        after = [ "network-pre.target" ];
+        before = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = [
+          "${pkgs.ethtool}/bin/ethtool -K eno2 tso off gso off"
+          "${pkgs.ethtool}/bin/ethtool --set-eee eno2 eee off"
+        ];
+      };
+    };
+
 ##### Secrets #################################################################
 
   sops = {
@@ -121,14 +136,13 @@ in
   environment.systemPackages = with pkgs; [
     cifs-utils
     dust
+    ethtool
     ghostty.terminfo
     git
     htop
     iperf3
     jq
     mosh
-    lshw
-    parted
     sanoid
     smartmontools
     sops

@@ -45,9 +45,9 @@
         useTemplate = ["frequent"];
       };
 
-      "rpool/persist" = {
-        useTemplate = ["recent"];
-      };
+      #"rpool/persist" = {
+      #  useTemplate = ["recent"];
+      #};
 
       "tank/media" = {
         useTemplate = ["recent"];
