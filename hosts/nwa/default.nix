@@ -10,6 +10,7 @@
     ./incus.nix
     ./media.nix
     ./samba.nix
+    ./power.nix
     ./scrutiny.nix
     ./syncthing.nix
     ./zfs.nix

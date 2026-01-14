@@ -1,19 +1,32 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   sops.secrets.ntfy_topic = { };
 
-  # ZFS notifications
+  # ZFS notifications with secret substitution via sops template
+  sops.templates."zed.rc" = {
+    content = ''
+      ZED_NOTIFY_INTERVAL_SECS=3600
+      ZED_NTFY_TOPIC="${config.sops.placeholder.ntfy_topic}"
+      ZED_NOTIFY_VERBOSE=true
+      ZED_SCRUB_AFTER_RESILVER=true
+    '';
+    owner = "root";
+    mode = "0600";
+  };
+
   services.zfs = {
     autoScrub.enable = true;
     trim.enable = true;
-    zed.settings = {
-      ZED_NOTIFY_INTERVAL_SECS=3600;
-      ZED_NTFY_TOPIC = "c22c0a8c-981d-471f-9cae-f36e4c89f19d";
-     # ZED_NTFY_TOPIC = config.sops.secrets.ntfy_topic.path;
-      ZED_NOTIFY_VERBOSE = true;
-      ZED_SCRUB_AFTER_RESILVER = true;
-    };
+  };
+
+  environment.etc."zfs/zed.d/zed.rc".source = lib.mkForce config.sops.templates."zed.rc".path;
+
+  # Ensure ZED restarts when config changes and starts after secrets are available
+  systemd.services.zfs-zed = {
+    restartTriggers = [ config.sops.templates."zed.rc".file ];
+    after = [ "sops-nix.service" ];
+    wants = [ "sops-nix.service" ];
   };
 
   # ZFS snapshots

@@ -9,19 +9,8 @@
     nmbd.enable = false;
     openFirewall = true;
     settings.global = {
-      "server smb encrypt" = "required";
       "server string" = "nwa";
       "min protocol" = "SMB2";
-      "vfs objects" = "fruit streams_xattr";
-      "fruit:model" = "MacPro";
-      "fruit:metadata" = "stream";
-      "fruit:veto_appledouble" = "no";
-      "fruit:nfs_aces" = "no";
-      "fruit:wipe_intentionally_left_blank_rfork" = "yes";
-      "fruit:delete_empty_adfiles" = "yes";
-      "fruit:posix_rename" = "yes";
-      "fruit:advertise_fullsync" = "yes";
-      "mdns name" = "mdns";
     };
 
     settings.backup = {
@@ -30,8 +19,9 @@
       "force user" = "dolf";
       "public" = "no";
       "writeable" = "yes";
+      "fruit:aapl" = "yes";
       "fruit:time machine" = "yes";
-      "fruit:time machine max size" = "1500G";
+      "vfs objects" = "catia fruit streams_xattr";
     };
 
     settings.backup-e = {
@@ -40,8 +30,9 @@
       "force user" = "emilie";
       "public" = "no";
       "writeable" = "yes";
+      "fruit:aapl" = "yes";
       "fruit:time machine" = "yes";
-      "fruit:time machine max size" = "1500G";
+      "vfs objects" = "catia fruit streams_xattr";
     };
 
     settings.media = {
@@ -51,6 +42,7 @@
       "force group" = "media";
       "public" = "no";
       "writeable" = "yes";
+      "fruit:aapl" = "yes";
     };
 };
 

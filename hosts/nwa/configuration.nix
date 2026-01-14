@@ -139,6 +139,7 @@ in
     ethtool
     ghostty.terminfo
     git
+    hdparm
     htop
     iperf3
     jq
