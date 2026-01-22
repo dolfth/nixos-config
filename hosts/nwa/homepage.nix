@@ -1,12 +1,7 @@
 { config, pkgs, ... }:
 
-{config = {
-
-    sops = {
-      secrets."adguard/username" = {};
-      secrets."adguard/password" ={};
-    };
-    services.homepage-dashboard = {
+{
+  services.homepage-dashboard = {
       enable = true;
       settings = {
         title = "nwa";
@@ -46,8 +41,6 @@
                 widget = {
                   type = "adguard";
                   url = "http://localhost:3000";
-                  #username = {config.sops.placeholder."adguard/username".path};
-                  #password = {config.sops.placeholder."adguard/password".path};
                 };
               };
             }
@@ -82,5 +75,4 @@
         }
       ];
     };
-};
 }

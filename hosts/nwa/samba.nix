@@ -1,5 +1,26 @@
 { config, pkgs, ... }:
 
+let
+  mkTimeMachineShare = user: path: {
+    inherit path;
+    "valid users" = user;
+    "force user" = user;
+    "public" = "no";
+    "writeable" = "yes";
+    "fruit:aapl" = "yes";
+    "fruit:time machine" = "yes";
+    "vfs objects" = "catia fruit streams_xattr";
+  };
+
+  mkShare = user: path: extra: {
+    inherit path;
+    "valid users" = user;
+    "force user" = user;
+    "public" = "no";
+    "writeable" = "yes";
+    "fruit:aapl" = "yes";
+  } // extra;
+in
 {
   # Samba users are independent of system users.
   # https://wiki.samba.org/index.php/Configure_Samba_to_Work_Better_with_Mac_OS_X
@@ -13,38 +34,10 @@
       "min protocol" = "SMB2";
     };
 
-    settings.backup = {
-      "path" = "/backup/dolf";
-      "valid users" = "dolf";
-      "force user" = "dolf";
-      "public" = "no";
-      "writeable" = "yes";
-      "fruit:aapl" = "yes";
-      "fruit:time machine" = "yes";
-      "vfs objects" = "catia fruit streams_xattr";
-    };
-
-    settings.backup-e = {
-      "path" = "/backup/emilie";
-      "valid users" = "emilie";
-      "force user" = "emilie";
-      "public" = "no";
-      "writeable" = "yes";
-      "fruit:aapl" = "yes";
-      "fruit:time machine" = "yes";
-      "vfs objects" = "catia fruit streams_xattr";
-    };
-
-    settings.media = {
-      "path" = "/mnt/media";
-      "valid users" = "dolf";
-      "force user" = "dolf";
-      "force group" = "media";
-      "public" = "no";
-      "writeable" = "yes";
-      "fruit:aapl" = "yes";
-    };
-};
+    settings.backup = mkTimeMachineShare "dolf" "/backup/dolf";
+    settings.backup-e = mkTimeMachineShare "emilie" "/backup/emilie";
+    settings.media = mkShare "dolf" "/mnt/media" { "force group" = "media"; };
+  };
 
   # Network discovery via zeroconf (Bonjour) networking
   services.avahi = {

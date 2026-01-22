@@ -1,5 +1,13 @@
 { config, pkgs, lib, ... }:
 
+let
+  baseSnapshot = {
+    hourly = 24;
+    daily = 7;
+    autoprune = true;
+    autosnap = true;
+  };
+in
 {
   sops.secrets.ntfy_topic = { };
 
@@ -8,10 +16,12 @@
     content = ''
       ZED_NOTIFY_INTERVAL_SECS=3600
       ZED_NTFY_TOPIC="${config.sops.placeholder.ntfy_topic}"
-      ZED_NOTIFY_VERBOSE=true
-      ZED_SCRUB_AFTER_RESILVER=true
+      ZED_NOTIFY_VERBOSE=1
+      ZED_SCRUB_AFTER_RESILVER=1
     '';
+    path = "/etc/zfs/zed.d/zed.rc";
     owner = "root";
+    group = "root";
     mode = "0600";
   };
 
@@ -20,13 +30,9 @@
     trim.enable = true;
   };
 
-  environment.etc."zfs/zed.d/zed.rc".source = lib.mkForce config.sops.templates."zed.rc".path;
-
-  # Ensure ZED restarts when config changes and starts after secrets are available
+  # Ensure ZED restarts when config changes
   systemd.services.zfs-zed = {
     restartTriggers = [ config.sops.templates."zed.rc".file ];
-    after = [ "sops-nix.service" ];
-    wants = [ "sops-nix.service" ];
   };
 
   # ZFS snapshots
@@ -34,23 +40,8 @@
     enable = true;
     interval = "hourly";
     templates = {
-
-      frequent = {
-          hourly = 24;
-          daily = 7;
-          monthly = 12;
-          yearly = 2;
-          autoprune = true;
-          autosnap = true;
-        };
-
-      recent = {
-        hourly = 24;
-        daily = 7;
-        autoprune = true;
-        autosnap = true;
-      };
-
+      frequent = baseSnapshot // { monthly = 12; yearly = 2; };
+      recent = baseSnapshot;
     };
     datasets = {
 

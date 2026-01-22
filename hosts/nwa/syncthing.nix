@@ -1,5 +1,10 @@
 { config, pkgs, ... }:
 
+let
+  home = "/home/dolf";
+  docs = "${home}/Documents";
+  mkFolder = path: devices: { inherit path devices; };
+in
 {
   services.syncthing = {
     enable = true;
@@ -7,8 +12,8 @@
     user = "dolf";
     guiAddress = "0.0.0.0:8384";
     openDefaultPorts = true;
-    dataDir = "/home/dolf/";
-    configDir = "/home/dolf/.config/syncthing";
+    dataDir = home;
+    configDir = "${home}/.config/syncthing";
     overrideDevices = true;
     overrideFolders = true;
     settings = {
@@ -18,26 +23,10 @@
         "LittleRedRabbit" = { id = "JQ3DHYB-AU3JYGR-BEWLREI-UGMLE6S-6JDS4T3-S5DXKHQ-RSE3RGV-KMUVGAT"; };
       };
       folders = {
-        "Documents" = {
-	  path = "/home/dolf/Documents";
-	  devices = ["gza"];
-        };
-        "passwords" = {
-          path = "/home/dolf/Documents/passwords";
-	  devices = ["rza"];
-	};
-	"notes" = {
-          path = "/home/dolf/Documents/notes";
-	  devices = ["rza"];
-	};
-        "administratie" = {
-	  path = "/home/dolf/Documents/administratie";
-          devices = ["LittleRedRabbit"];
-        };
-#	"notes" = {
-#	  path = "/home/dolf/Documents/notes";
-#          devices = ["rza"];
-#	};
+        "Documents" = mkFolder docs ["gza"];
+        "passwords" = mkFolder "${docs}/passwords" ["rza"];
+        "notes" = mkFolder "${docs}/notes" ["rza"];
+        "administratie" = mkFolder "${docs}/administratie" ["LittleRedRabbit"];
       };
     };
   };
