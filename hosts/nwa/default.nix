@@ -6,7 +6,7 @@
     ./configuration.nix
     ./hardware-configuration.nix
 
-    ./homepage.nix
+    ./gatus.nix
     ./incus.nix
     ./media.nix
     ./samba.nix
