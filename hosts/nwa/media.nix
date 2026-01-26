@@ -13,7 +13,7 @@
     enable = true;
     mediaDir = "/mnt/media";
     stateDir = "/mnt/media/.nixarr";
-    jellyfin.enable = false;
+    jellyfin.enable = true;
     transmission.enable = true;
     bazarr.enable = true;
     lidarr.enable = true;

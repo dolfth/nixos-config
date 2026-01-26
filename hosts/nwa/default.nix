@@ -8,6 +8,7 @@
 
     ./gatus.nix
     ./incus.nix
+    ./jellyplex-watched.nix
     ./media.nix
     ./samba.nix
     ./power.nix
