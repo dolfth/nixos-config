@@ -36,6 +36,7 @@ in
       DEBUG_LEVEL=INFO
       LOG_FILE=/var/log/jellyplex-watched/output.log
       USER_MAPPING={"dolfth": "dolf", "Emilie": "emilie"}
+      LIBRARY_MAPPING={"Movies": "Movies", "TV Shows": "Shows", "Music": "Music"}
     '';
     owner = "jellyplex-watched";
     group = "jellyplex-watched";

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Single-host NixOS configuration using flakes for a home NAS server (hostname: `nwa`). The system runs ZFS storage, media services, file sharing, and various home server applications.
+Single-host NixOS configuration using flakes for a home NAS server (hostname: `nwa`). The system runs ZFS storage, media services, file sharing, and various home server applications. Structured to support multiple hosts.
 
 ## Build Commands
 
@@ -29,23 +29,37 @@ sops secrets/secrets.yaml
 
 **Flake Inputs:** nixpkgs (unstable), nixarr (media stack), nixvim (editor), sops-nix (secrets)
 
-**Module Organization:**
-- `flake.nix` — Entry point, defines `nwa` host and sets `allowUnfree`
-- `common/` — Shared modules (fish shell, nixvim, tailscale)
-- `hosts/nwa/` — Host-specific configuration modules
+**Directory Structure:**
+```
+├── flake.nix              # Entry point, host definitions, allowUnfree
+├── common/                # Shell/editor config (all hosts)
+│   ├── fish.nix
+│   ├── nixvim.nix
+│   └── tailscale.nix
+├── modules/               # NAS service modules (shareable)
+│   ├── gatus.nix
+│   ├── jellyplex-watched.nix
+│   ├── media.nix
+│   ├── samba.nix
+│   ├── services.nix
+│   └── syncthing.nix
+├── hosts/
+│   ├── common.nix         # Shared host config (users, packages, locale, sops)
+│   └── nwa/               # Physical NAS host
+│       ├── configuration.nix      # Boot, hardware, networking
+│       ├── hardware-configuration.nix
+│       ├── incus.nix
+│       ├── power.nix
+│       └── zfs.nix
+└── secrets/
+    └── secrets.yaml
+```
 
-**Host Modules (`hosts/nwa/`):**
-- `configuration.nix` — Core system: boot, hardware, networking, users, packages
-- `hardware-configuration.nix` — Auto-generated, do not edit manually
-- `zfs.nix` — ZFS pools (rpool, tank), sanoid snapshots, ZED notifications via ntfy.sh
-- `media.nix` — nixarr stack: Plex, Jellyfin, Transmission, Sonarr, Radarr, Lidarr, Bazarr, Prowlarr, Recyclarr
-- `samba.nix` — SMB shares with Time Machine support (uses `mkShare`/`mkTimeMachineShare` helpers)
-- `incus.nix` — Container/VM virtualization with ZFS-backed storage
-- `power.nix` — PowerTOP, Intel P-state, HDD spindown, NIC power management fix
-- `syncthing.nix` — File sync with remote devices
-- `gatus.nix` — Status page with ntfy.sh alerts (uses `mkEndpoint` helper)
-- `jellyplex-watched.nix` — Sync watch status between Jellyfin and Plex
-- `services.nix` — Simple services: AdGuard Home, Mealie, Scrutiny
+**Module Categories:**
+- `common/` — Shell, editor, VPN (inherited by all hosts)
+- `hosts/common.nix` — Users, packages, locale, sops (inherited by all hosts)
+- `modules/` — NAS services (can be selectively imported per host)
+- `hosts/<name>/` — Hardware-specific config (boot, disks, networking)
 
 ## Secrets Management
 
@@ -55,8 +69,16 @@ Secrets in `secrets/secrets.yaml` are referenced via `config.sops.placeholder.<k
 
 ## Key Patterns
 
-- Services organized as individual `.nix` files imported by `hosts/nwa/default.nix`
 - Helper functions reduce repetition (e.g., `mkEndpoint` in gatus.nix, `mkShare` in samba.nix)
+- Hardware-specific config stays in `hosts/<name>/`, services go in `modules/`
 - ZFS primary storage with dual boot mirrors (/boot1, /boot2)
 - Network bridge `br0` on `eno2` with nftables
 - Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`
+
+## Adding a New Host
+
+1. Create `hosts/<name>/` directory
+2. Add `hardware-configuration.nix` (generate with `nixos-generate-config`)
+3. Add `configuration.nix` with host-specific boot/hardware/networking
+4. Add `default.nix` importing common configs and desired modules
+5. Add host to `flake.nix` under `nixosConfigurations`
