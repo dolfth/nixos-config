@@ -12,7 +12,7 @@
     ./media.nix
     ./samba.nix
     ./power.nix
-    ./scrutiny.nix
+    ./services.nix
     ./syncthing.nix
     ./zfs.nix
   ];

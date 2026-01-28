@@ -45,8 +45,7 @@ sops secrets/secrets.yaml
 - `syncthing.nix` — File sync with remote devices
 - `gatus.nix` — Status page with ntfy.sh alerts (uses `mkEndpoint` helper)
 - `jellyplex-watched.nix` — Sync watch status between Jellyfin and Plex
-- `adguardhome.nix` — DNS ad-blocking
-- `scrutiny.nix` — Disk health monitoring
+- `services.nix` — Simple services: AdGuard Home, Mealie, Scrutiny
 
 ## Secrets Management
 

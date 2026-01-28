@@ -100,10 +100,6 @@ in
 
   services.getty.autologinUser = "dolf";
 
-##### Services ###############################################################
-
-  services.mealie.enable = true;
-
 ##### Packages ###############################################################
 
   environment.systemPackages = with pkgs; [
