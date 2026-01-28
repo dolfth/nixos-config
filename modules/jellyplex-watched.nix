@@ -35,6 +35,7 @@ in
       DRYRUN=False
       DEBUG_LEVEL=INFO
       LOG_FILE=/var/log/jellyplex-watched/output.log
+      USER_MAPPING={"dolfth": "dolf", "Emilie": "emilie"}
     '';
     owner = "jellyplex-watched";
     group = "jellyplex-watched";
