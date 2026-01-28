@@ -2,18 +2,16 @@
 
 {
   imports = [
-    ../../common
-    ./configuration.nix
-    ./hardware-configuration.nix
+    # Common configurations
+    ../../common              # Shell, editor, tailscale
+    ../common.nix             # Users, packages, locale, sops
+    ../../modules             # NAS services
 
-    ./gatus.nix
+    # Host-specific
+    ./configuration.nix       # Boot, hardware, networking
+    ./hardware-configuration.nix
     ./incus.nix
-    ./jellyplex-watched.nix
-    ./media.nix
-    ./samba.nix
     ./power.nix
-    ./services.nix
-    ./syncthing.nix
     ./zfs.nix
   ];
 }
