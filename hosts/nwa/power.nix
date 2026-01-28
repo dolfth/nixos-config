@@ -25,6 +25,18 @@
 
   # HDD spindown after 20 minutes of inactivity (value 244 = 20 min)
   # USB autosuspend after 2 seconds of inactivity
+  # Keep Ethernet NIC always on (runs after PowerTOP so it doesn't get overridden)
+  systemd.services.nic-power-on = {
+    description = "Disable power management on Ethernet NIC";
+    after = [ "powertop.service" "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash -c 'echo on > /sys/devices/pci0000:00/0000:00:1f.6/power/control'";
+      RemainAfterExit = true;
+    };
+  };
+
   services.udev.extraRules = ''
     # Spin down idle HDDs after 20 minutes
     ACTION=="add", SUBSYSTEM=="block", KERNEL=="sd[a-z]", RUN+="${pkgs.hdparm}/bin/hdparm -S 244 /dev/%k"

@@ -30,30 +30,34 @@ sops secrets/secrets.yaml
 **Flake Inputs:** nixpkgs (unstable), nixarr (media stack), nixvim (editor), sops-nix (secrets)
 
 **Module Organization:**
-- `flake.nix` — Entry point defining the `nwa` host configuration
+- `flake.nix` — Entry point, defines `nwa` host and sets `allowUnfree`
 - `common/` — Shared modules (fish shell, nixvim, tailscale)
 - `hosts/nwa/` — Host-specific configuration modules
 
 **Host Modules (`hosts/nwa/`):**
-- `configuration.nix` — Core system: boot (GRUB/ZFS), networking (bridge br0), users, localization
+- `configuration.nix` — Core system: boot, hardware, networking, users, packages
 - `hardware-configuration.nix` — Auto-generated, do not edit manually
 - `zfs.nix` — ZFS pools (rpool, tank), sanoid snapshots, ZED notifications via ntfy.sh
-- `media.nix` — nixarr stack: Plex, Transmission, Sonarr, Radarr, Lidarr, Bazarr, Prowlarr
-- `samba.nix` — SMB shares with Time Machine support for macOS clients
-- `incus.nix` — Container virtualization with ZFS-backed storage
-- `power.nix` — PowerTOP, Intel P-state, HDD spindown, USB autosuspend
-- `syncthing.nix` — File sync with remote devices (gza, rza, LittleRedRabbit)
-- `adguardhome.nix`, `homepage.nix`, `scrutiny.nix` — Dashboard and monitoring services
+- `media.nix` — nixarr stack: Plex, Jellyfin, Transmission, Sonarr, Radarr, Lidarr, Bazarr, Prowlarr, Recyclarr
+- `samba.nix` — SMB shares with Time Machine support (uses `mkShare`/`mkTimeMachineShare` helpers)
+- `incus.nix` — Container/VM virtualization with ZFS-backed storage
+- `power.nix` — PowerTOP, Intel P-state, HDD spindown, NIC power management fix
+- `syncthing.nix` — File sync with remote devices
+- `gatus.nix` — Status page with ntfy.sh alerts (uses `mkEndpoint` helper)
+- `jellyplex-watched.nix` — Sync watch status between Jellyfin and Plex
+- `adguardhome.nix` — DNS ad-blocking
+- `scrutiny.nix` — Disk health monitoring
 
 ## Secrets Management
 
 Uses sops-nix with age encryption. Key at `/home/dolf/.config/sops/age/keys.txt`.
 
-Secrets in `secrets/secrets.yaml` are referenced via `config.sops.placeholder.<key>` for runtime substitution.
+Secrets in `secrets/secrets.yaml` are referenced via `config.sops.placeholder.<key>` for runtime substitution in templates.
 
 ## Key Patterns
 
 - Services organized as individual `.nix` files imported by `hosts/nwa/default.nix`
-- ZFS is the primary storage with dual boot mirrors (/boot1, /boot2)
-- Network uses bridge interface `br0` on `eno2` with nftables firewall
-- Conventional commits: `feat:`, `fix:`, `chore:`, `BREAKING CHANGE:`
+- Helper functions reduce repetition (e.g., `mkEndpoint` in gatus.nix, `mkShare` in samba.nix)
+- ZFS primary storage with dual boot mirrors (/boot1, /boot2)
+- Network bridge `br0` on `eno2` with nftables
+- Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`

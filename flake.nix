@@ -19,18 +19,16 @@
 
   outputs = { self, nixpkgs, nixarr, nixvim, sops-nix, ... }@inputs: {
 
-    nixosConfigurations =
-      {
-        nwa = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./hosts/nwa
-            nixarr.nixosModules.default
-            nixvim.nixosModules.nixvim
-            sops-nix.nixosModules.sops
-          ];
-        };
-      };
+    nixosConfigurations.nwa = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      specialArgs = { inherit inputs; };
+      modules = [
+        { nixpkgs.config.allowUnfree = true; }
+        ./hosts/nwa
+        nixarr.nixosModules.default
+        nixvim.nixosModules.nixvim
+        sops-nix.nixosModules.sops
+      ];
+    };
   };
 }

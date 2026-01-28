@@ -1,5 +1,37 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
+let
+  # Helper to generate endpoint YAML
+  mkEndpoint = { name, group, port, path ? "", condition ? "[STATUS] == 200" }: ''
+    - name: ${name}
+      group: ${group}
+      url: http://localhost:${toString port}${path}
+      interval: 60s
+      conditions:
+        - "${condition}"
+      alerts:
+        - type: ntfy
+  '';
+
+  mediaEndpoints = [
+    { name = "Plex"; group = "Media"; port = 32400; path = "/web"; condition = "[STATUS] < 400"; }
+    { name = "Jellyfin"; group = "Media"; port = 8096; }
+    { name = "Sonarr"; group = "Media"; port = 8989; }
+    { name = "Radarr"; group = "Media"; port = 7878; }
+    { name = "Lidarr"; group = "Media"; port = 8686; }
+    { name = "Bazarr"; group = "Media"; port = 6767; }
+    { name = "Prowlarr"; group = "Media"; port = 9696; }
+    { name = "Transmission"; group = "Media"; port = 9091; condition = "[STATUS] < 400"; }
+  ];
+
+  serverEndpoints = [
+    { name = "AdGuard Home"; group = "Server"; port = 3000; }
+    { name = "Scrutiny"; group = "Server"; port = 8687; }
+    { name = "Syncthing"; group = "Server"; port = 8384; condition = "[STATUS] < 400"; }
+  ];
+
+  allEndpoints = lib.concatMapStrings mkEndpoint (mediaEndpoints ++ serverEndpoints);
+in
 {
   sops.templates."gatus.yaml" = {
     content = ''
@@ -18,95 +50,7 @@
             send-on-resolved: true
 
       endpoints:
-        - name: Plex
-          group: Media
-          url: http://localhost:32400/web
-          interval: 60s
-          conditions:
-            - "[STATUS] < 400"
-          alerts:
-            - type: ntfy
-
-        - name: Sonarr
-          group: Media
-          url: http://localhost:8989
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Radarr
-          group: Media
-          url: http://localhost:7878
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Lidarr
-          group: Media
-          url: http://localhost:8686
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Bazarr
-          group: Media
-          url: http://localhost:6767
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Prowlarr
-          group: Media
-          url: http://localhost:9696
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Transmission
-          group: Media
-          url: http://localhost:9091
-          interval: 60s
-          conditions:
-            - "[STATUS] < 400"
-          alerts:
-            - type: ntfy
-
-        - name: AdGuard Home
-          group: Server
-          url: http://localhost:3000
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Scrutiny
-          group: Server
-          url: http://localhost:8687
-          interval: 60s
-          conditions:
-            - "[STATUS] == 200"
-          alerts:
-            - type: ntfy
-
-        - name: Syncthing
-          group: Server
-          url: http://localhost:8384
-          interval: 60s
-          conditions:
-            - "[STATUS] < 400"
-          alerts:
-            - type: ntfy
+      ${allEndpoints}
     '';
     owner = "gatus";
     group = "gatus";
