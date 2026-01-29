@@ -31,6 +31,24 @@
             };
           };
         }
+        {
+          name = "vlan20";
+          description = "Profile for VLAN 20 (IoT/TV network)";
+          devices = {
+            eth0 = {
+              name = "eth0";
+              type = "nic";
+              nictype = "macvlan";
+              parent = "eno2";
+              vlan = "20";
+            };
+            root = {
+              path = "/";
+              pool = "default";
+              type = "disk";
+            };
+          };
+        }
       ];
 
       storage_pools = [

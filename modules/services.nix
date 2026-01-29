@@ -1,7 +1,7 @@
 { ... }:
 
 {
-  services.adguardhome.enable = true;
+  services.adguardhome.enable = false;
 
   services.mealie.enable = true;
 

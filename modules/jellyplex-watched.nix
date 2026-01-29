@@ -67,7 +67,7 @@ in
       Type = "oneshot";
       User = "jellyplex-watched";
       Group = "jellyplex-watched";
-      WorkingDirectory = jellyplex-watched-src;
+      WorkingDirectory = "/var/lib/jellyplex-watched";
       EnvironmentFile = config.sops.templates."jellyplex-watched.env".path;
       ExecStart = "${pythonEnv}/bin/python ${jellyplex-watched-src}/main.py";
 
@@ -76,7 +76,7 @@ in
       ProtectSystem = "strict";
       ProtectHome = true;
       PrivateTmp = true;
-      ReadWritePaths = [ "/var/log/jellyplex-watched" ];
+      ReadWritePaths = [ "/var/lib/jellyplex-watched" "/var/log/jellyplex-watched" ];
     };
   };
 

@@ -25,7 +25,6 @@ let
   ];
 
   serverEndpoints = [
-    { name = "AdGuard Home"; group = "Server"; port = 3000; }
     { name = "Scrutiny"; group = "Server"; port = 8687; }
     { name = "Syncthing"; group = "Server"; port = 8384; condition = "[STATUS] < 400"; }
   ];
