@@ -9,14 +9,14 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 ## Build Commands
 
 ```bash
+# Check flake for errors (no sudo required)
+nix flake check
+
 # Rebuild and switch to new configuration
 sudo nixos-rebuild switch --flake /home/dolf/.config/nixos
 
 # Build without switching (test compilation)
 sudo nixos-rebuild build --flake /home/dolf/.config/nixos
-
-# Check flake for errors
-nix flake check
 
 # Update flake dependencies
 nix flake update
@@ -24,6 +24,8 @@ nix flake update
 # Edit encrypted secrets
 sops secrets/secrets.yaml
 ```
+
+**Important:** Always run `nix flake check` after making changes and before asking the user to rebuild. This catches syntax errors without requiring sudo.
 
 ## Architecture
 
