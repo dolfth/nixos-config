@@ -1,9 +1,28 @@
 { config, pkgs, lib, ... }:
 
 let
-  # Script to run art upload inside the container
+  # Script to run art upload with backoff retries
+  # 5 attempts: 12:00, 12:30, 13:00, 17:30, 21:00
   runArtUpload = pkgs.writeShellScript "frame-art-changer-upload" ''
-    ${pkgs.incus}/bin/incus exec frame-art-changer -- /opt/frame-art-changer/run-upload.sh
+    DELAYS=(0 1800 1800 16200 12600)  # seconds: 0, 30min, 30min, 270min, 210min
+    MAX_ATTEMPTS=5
+
+    for attempt in $(seq 1 $MAX_ATTEMPTS); do
+      echo "Attempt $attempt of $MAX_ATTEMPTS..."
+      if ${pkgs.incus}/bin/incus exec frame-art-changer -- /opt/frame-art-changer/run-upload.sh; then
+        echo "Success on attempt $attempt"
+        exit 0
+      fi
+
+      if [ $attempt -lt $MAX_ATTEMPTS ]; then
+        delay=''${DELAYS[$attempt]}
+        echo "Failed, waiting $((delay / 60)) minutes before retry..."
+        sleep $delay
+      fi
+    done
+
+    echo "All $MAX_ATTEMPTS attempts failed"
+    exit 1
   '';
 
   # Script to ensure container exists and is configured
@@ -171,15 +190,14 @@ in
     };
   };
 
-  # Timer for daily art rotation
+  # Timer for daily art rotation at noon
   systemd.timers.frame-art-changer = {
     description = "Samsung Frame art changer timer";
     wantedBy = [ "timers.target" ];
 
     timerConfig = {
-      OnCalendar = "daily";
+      OnCalendar = "*-*-* 12:00:00";
       Persistent = true;
-      RandomizedDelaySec = "1h";
     };
   };
 

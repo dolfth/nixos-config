@@ -20,6 +20,9 @@
   # zram swap since ZFS doesn't support swap on zvols or swapfiles
   zramSwap.enable = true;
 
+  # Disable wireless and bluetooth to save power
+  boot.blacklistedKernelModules = [ "iwlwifi" "btusb" ];
+
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
