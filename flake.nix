@@ -15,14 +15,9 @@
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    microvm = {
-      url = "github:astro/microvm.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, nixarr, nixvim, sops-nix, microvm, ... }@inputs: {
+  outputs = { self, nixpkgs, nixarr, nixvim, sops-nix, ... }@inputs: {
 
     nixosConfigurations.nwa = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
@@ -33,7 +28,6 @@
         nixarr.nixosModules.default
         nixvim.nixosModules.nixvim
         sops-nix.nixosModules.sops
-        microvm.nixosModules.host
       ];
     };
   };

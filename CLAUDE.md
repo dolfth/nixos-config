@@ -19,7 +19,7 @@ sudo nixos-rebuild switch --flake /home/dolf/.config/nixos
 sudo nixos-rebuild build --flake /home/dolf/.config/nixos
 
 # Update flake dependencies
-nix flake update
+nix flake update --flake /home/dolf/.config/nixos
 
 # Edit encrypted secrets
 sops secrets/secrets.yaml
@@ -39,6 +39,7 @@ sops secrets/secrets.yaml
 │   ├── nixvim.nix
 │   └── tailscale.nix
 ├── modules/               # NAS service modules (shareable)
+│   ├── frame-art-changer.nix
 │   ├── gatus.nix
 │   ├── jellyplex-watched.nix
 │   ├── media.nix
