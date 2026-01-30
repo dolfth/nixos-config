@@ -4,7 +4,7 @@
   imports = [
     # Common configurations
     ../../common              # Shell, editor, tailscale
-    ../common.nix             # Users, packages, locale, sops
+    ../base.nix               # Users, packages, locale, sops
     ../../modules             # NAS services
 
     # Host-specific
@@ -14,4 +14,7 @@
     ./power.nix
     ./zfs.nix
   ];
+
+  # Enable services
+  services.frame-art-changer.enable = true;
 }

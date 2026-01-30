@@ -30,7 +30,7 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │       ├── run-upload.sh
 │       └── get-token.py
 ├── hosts/
-│   ├── common.nix         # Shared host config (users, packages, locale, sops)
+│   ├── base.nix           # Shared host config (users, packages, locale, sops)
 │   └── nwa/               # Physical NAS host
 │       ├── configuration.nix
 │       ├── hardware-configuration.nix
@@ -43,7 +43,7 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 
 **Module Categories:**
 - `common/` — Shell, editor, VPN (inherited by all hosts)
-- `hosts/common.nix` — Users, packages, locale, sops (inherited by all hosts)
+- `hosts/base.nix` — Users, packages, locale, sops (inherited by all hosts)
 - `modules/` — NAS services (can be selectively imported per host)
 - `hosts/<name>/` — Hardware-specific config (boot, disks, networking)
 - `scripts/` — External scripts for modules (keeps .nix files clean)

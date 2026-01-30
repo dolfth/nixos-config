@@ -1,6 +1,20 @@
 { config, pkgs, lib, ... }:
 
 let
+  cfg = config.services.frame-art-changer;
+in
+{
+  options.services.frame-art-changer = {
+    enable = lib.mkEnableOption "Samsung Frame art changer";
+
+    artDirectory = lib.mkOption {
+      type = lib.types.path;
+      default = "/mnt/media/art";
+      description = "Directory containing art images to display on the Samsung Frame TV";
+    };
+  };
+
+  config = lib.mkIf cfg.enable (let
   # External scripts for easier maintenance
   uploadArtPy = builtins.readFile ../scripts/frame-art-changer/upload-art.py;
   runUploadSh = builtins.readFile ../scripts/frame-art-changer/run-upload.sh;
@@ -45,7 +59,7 @@ let
 
       # Add art directory device
       ${pkgs.incus}/bin/incus config device add frame-art-changer art disk \
-        source=/home/dolf/Documents/art \
+        source=${cfg.artDirectory} \
         path=/art
 
       # Set up the container
@@ -84,8 +98,8 @@ PYTOKENSCRIPT
       ${pkgs.incus}/bin/incus start frame-art-changer || true
     fi
   '';
-in
-{
+  in
+  {
   # Ensure container exists on boot
   systemd.services.frame-art-changer-container = {
     description = "Ensure Samsung Frame art changer container exists";
@@ -125,6 +139,7 @@ in
 
   # Ensure art directory exists
   systemd.tmpfiles.rules = [
-    "d /home/dolf/Documents/art 0755 dolf users -"
+    "d ${cfg.artDirectory} 0755 dolf media -"
   ];
+});
 }
