@@ -6,14 +6,42 @@ sys.path.insert(0, '/opt/frame-art-changer/samsung-tv-ws-api')
 import hashlib
 import json
 import random
+import socket
+import time
 from pathlib import Path
 from samsungtvws.async_art import SamsungTVAsyncArt
 import asyncio
 
 TV_IP = "192.168.20.251"
+TV_MAC = "28:af:42:5f:5e:38"
 TV_TOKEN = "19899746"
 ART_DIR = Path("/art")
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
+
+def send_wol(mac_address: str):
+    """Send Wake-on-LAN magic packet."""
+    mac_bytes = bytes.fromhex(mac_address.replace(":", "").replace("-", ""))
+    magic_packet = b'\xff' * 6 + mac_bytes * 16
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.sendto(magic_packet, ('255.255.255.255', 9))
+    print(f"Sent Wake-on-LAN packet to {mac_address}")
+
+def wait_for_tv(ip: str, port: int = 8002, timeout: int = 60) -> bool:
+    """Wait for TV to become reachable."""
+    print(f"Waiting for TV at {ip}:{port} to come online...")
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(2)
+                sock.connect((ip, port))
+                print("TV is online!")
+                return True
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            time.sleep(2)
+    return False
 
 def get_file_hash(path):
     h = hashlib.sha256()
@@ -33,12 +61,52 @@ def save_state(state):
 async def main():
     state = load_state()
 
+    # Wake the TV
+    send_wol(TV_MAC)
+
+    # Wait for TV to come online
+    if not wait_for_tv(TV_IP):
+        print("TV did not come online after WOL", file=sys.stderr)
+        sys.exit(1)
+
+    # Give TV a moment to fully initialize after network is up
+    time.sleep(5)
+
     try:
         tv = SamsungTVAsyncArt(TV_IP, token=TV_TOKEN, port=8002)
         await asyncio.wait_for(tv.start_listening(), timeout=30)
     except Exception as e:
         print(f"Failed to connect: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # Ensure TV is in Art Mode
+    try:
+        art_mode_status = await asyncio.wait_for(tv.get_artmode(), timeout=10)
+        print(f"Current art mode status: {art_mode_status}")
+        if art_mode_status != "on":
+            print("Switching to Art Mode...")
+            await asyncio.wait_for(tv.set_artmode("on"), timeout=10)
+            # Give TV time to switch modes
+            await asyncio.sleep(3)
+            print("Art Mode enabled")
+    except Exception as e:
+        print(f"Warning: Could not set art mode: {e}", file=sys.stderr)
+        # Continue anyway - might still be able to upload/select art
+
+    # Configure display settings
+    try:
+        # Enable auto brightness based on ambient light
+        print("Enabling brightness sensor...")
+        await asyncio.wait_for(tv.set_brightness_sensor_setting(1), timeout=10)
+
+        # Motion sensor: sensitivity 2 (medium), timer 30 minutes
+        # TV will show art when motion detected, turn off after 30 min of no motion
+        print("Configuring motion sensor (sensitivity: medium, timer: 30 min)...")
+        await asyncio.wait_for(tv.set_motion_sensitivity(2), timeout=10)
+        await asyncio.wait_for(tv.set_motion_timer(30), timeout=10)
+        print("Display settings configured")
+    except Exception as e:
+        print(f"Warning: Could not configure display settings: {e}", file=sys.stderr)
 
     try:
         # Upload new images

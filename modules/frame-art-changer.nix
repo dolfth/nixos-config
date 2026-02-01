@@ -20,11 +20,10 @@ in
   runUploadSh = builtins.readFile ../scripts/frame-art-changer/run-upload.sh;
   getTokenPy = builtins.readFile ../scripts/frame-art-changer/get-token.py;
 
-  # Script to run art upload with backoff retries
-  # 5 attempts: 12:00, 12:30, 13:00, 17:30, 21:00
+  # Script to run art upload with retry (WOL should wake TV, so short retries)
   runArtUpload = pkgs.writeShellScript "frame-art-changer-upload" ''
-    DELAYS=(0 1800 1800 16200 12600)  # seconds: 0, 30min, 30min, 270min, 210min
-    MAX_ATTEMPTS=5
+    MAX_ATTEMPTS=3
+    RETRY_DELAY=60  # 1 minute between retries
 
     for attempt in $(seq 1 $MAX_ATTEMPTS); do
       echo "Attempt $attempt of $MAX_ATTEMPTS..."
@@ -34,9 +33,8 @@ in
       fi
 
       if [ $attempt -lt $MAX_ATTEMPTS ]; then
-        delay=''${DELAYS[$attempt]}
-        echo "Failed, waiting $((delay / 60)) minutes before retry..."
-        sleep $delay
+        echo "Failed, waiting $RETRY_DELAY seconds before retry..."
+        sleep $RETRY_DELAY
       fi
     done
 
