@@ -22,6 +22,7 @@ let
     { name = "Bazarr"; group = "Media"; port = 6767; }
     { name = "Prowlarr"; group = "Media"; port = 9696; }
     { name = "Transmission"; group = "Media"; port = 9091; condition = "[STATUS] < 400"; }
+    { name = "slskd"; group = "Media"; port = 5030; condition = "[STATUS] < 400"; }
   ];
 
   serverEndpoints = [
