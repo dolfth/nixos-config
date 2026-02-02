@@ -11,12 +11,29 @@ import time
 from pathlib import Path
 from samsungtvws.async_art import SamsungTVAsyncArt
 import asyncio
+import requests
 
 TV_IP = "192.168.20.251"
 TV_MAC = "28:af:42:5f:5e:38"
-TV_TOKEN = "19899746"
+TV_TOKEN = "16193955"
 ART_DIR = Path("/art")
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
+NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
+
+def send_notification(message: str, title: str = "Frame TV"):
+    """Send notification via ntfy.sh."""
+    if not NTFY_TOPIC:
+        print("NTFY_TOPIC not set, skipping notification")
+        return
+    try:
+        requests.post(
+            f"https://ntfy.sh/{NTFY_TOPIC}",
+            data=message.encode('utf-8'),
+            headers={"Title": title, "Tags": "art,frame_with_picture"}
+        )
+        print(f"Notification sent: {message}")
+    except Exception as e:
+        print(f"Failed to send notification: {e}", file=sys.stderr)
 
 def send_wol(mac_address: str):
     """Send Wake-on-LAN magic packet."""
