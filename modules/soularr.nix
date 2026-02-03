@@ -48,7 +48,10 @@ let
       hash = "sha256-LmWP7bnK5IVid255qS2NGOmyKzGpUl3xsO5vi5uJI88=";
     };
 
-    build-system = [ pkgs.python312Packages.setuptools ];
+    build-system = with pkgs.python312Packages; [
+      setuptools
+      setuptools-git-versioning
+    ];
 
     dependencies = with pkgs.python312Packages; [
       requests

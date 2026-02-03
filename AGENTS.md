@@ -23,6 +23,8 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │   ├── media.nix
 │   ├── samba.nix
 │   ├── services.nix
+│   ├── slskd.nix
+│   ├── soularr.nix
 │   └── syncthing.nix
 ├── scripts/               # External scripts referenced by modules
 │   └── frame-art-changer/
@@ -165,6 +167,8 @@ Before considering a change complete:
 The `frame-art-changer` runs in an Incus container on vlan20. Key points:
 - Container uses ad-hoc `nix shell` for dependencies (no sandbox: `--option sandbox false`)
 - Scripts are deployed via heredoc in the container setup
+- Sends ntfy notifications with artwork info (title, artist, date) on art changes
+- Supports WOL, art mode switching, and display settings
 - To update container scripts: delete container, rebuild, restart service
 
 ### Samsung Frame TV Token

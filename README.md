@@ -23,7 +23,8 @@ nix flake update
 
 ## Services
 
-- Media stack (Plex, Jellyfin, Radarr, Sonarr, Transmission)
+- Media stack (Plex, Jellyfin, Radarr, Sonarr, Lidarr, Transmission)
+- Music acquisition (slskd, soularr)
 - File sharing (Samba, Time Machine, Syncthing)
 - Monitoring (Gatus status page, disk health checks)
 - Samsung Frame TV art rotation
