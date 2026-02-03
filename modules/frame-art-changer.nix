@@ -27,7 +27,7 @@ in
 
     for attempt in $(seq 1 $MAX_ATTEMPTS); do
       echo "Attempt $attempt of $MAX_ATTEMPTS..."
-      if ${pkgs.incus}/bin/incus exec frame-art-changer -- /opt/frame-art-changer/run-upload.sh; then
+      if ${pkgs.incus}/bin/incus exec frame-art-changer --env NTFY_TOPIC="$(cat ${config.sops.secrets.ntfy_topic.path})" -- /opt/frame-art-changer/run-upload.sh; then
         echo "Success on attempt $attempt"
         exit 0
       fi

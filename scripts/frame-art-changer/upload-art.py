@@ -18,7 +18,7 @@ TV_MAC = "28:af:42:5f:5e:38"
 TV_TOKEN = "16193955"
 ART_DIR = Path("/art")
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
-NTFY_TOPIC = os.environ.get("NTFY_TOPIC")
+NTFY_TOPIC = os.environ.get("NTFY_TOPIC")  # Passed via incus exec --env from sops secret
 
 def send_notification(message: str, title: str = "Frame TV"):
     """Send notification via ntfy.sh."""
@@ -66,10 +66,53 @@ def get_file_hash(path):
         h.update(f.read())
     return h.hexdigest()
 
+def parse_artwork_filename(filename: str) -> dict:
+    """Parse artwork filename into artist, title, and optional year.
+
+    Expected formats:
+      "Artist Name - Artwork Title.jpg"
+      "Artist Name - Artwork Title (1881).jpg"
+    """
+    import re
+    stem = Path(filename).stem
+
+    # Try to split on " - " for artist/title
+    if " - " in stem:
+        artist, rest = stem.split(" - ", 1)
+    else:
+        artist = None
+        rest = stem
+
+    # Check for year in brackets at the end
+    year_match = re.search(r'\((\d{4})\)\s*$', rest)
+    if year_match:
+        year = year_match.group(1)
+        title = rest[:year_match.start()].strip()
+    else:
+        year = None
+        title = rest.strip()
+
+    return {"artist": artist, "title": title, "year": year}
+
+def format_artwork_info(info: dict) -> str:
+    """Format artwork info for display/notification."""
+    parts = []
+    if info.get("title"):
+        parts.append(info["title"])
+    if info.get("artist"):
+        parts.append(f"by {info['artist']}")
+    if info.get("year"):
+        parts.append(f"({info['year']})")
+    return " ".join(parts) if parts else "Unknown artwork"
+
 def load_state():
     if STATE_FILE.exists():
-        return json.loads(STATE_FILE.read_text())
-    return {}
+        data = json.loads(STATE_FILE.read_text())
+        # Migrate old format (flat {filename: hash}) to new format
+        if data and "uploads" not in data and "artwork" not in data:
+            return {"uploads": data, "artwork": {}}
+        return data
+    return {"uploads": {}, "artwork": {}}
 
 def save_state(state):
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -131,7 +174,7 @@ async def main():
             if f.suffix.lower() in ('.png', '.jpg', '.jpeg'):
                 file_hash = get_file_hash(f)
 
-                if state.get(f.name) == file_hash:
+                if state["uploads"].get(f.name) == file_hash:
                     print(f"Skipping {f.name} (already uploaded)")
                     continue
 
@@ -139,10 +182,14 @@ async def main():
                 print(f"Uploading {f.name}...")
 
                 data = f.read_bytes()
-                result = await tv.upload(data, file_type=file_type, matte='none')
-                state[f.name] = file_hash
+                content_id = await tv.upload(data, file_type=file_type, matte='none')
+                state["uploads"][f.name] = file_hash
+                # Store artwork info mapped to content_id
+                artwork_info = parse_artwork_filename(f.name)
+                artwork_info["filename"] = f.name
+                state["artwork"][content_id] = artwork_info
                 save_state(state)
-                print(f"  Uploaded as {result}")
+                print(f"  Uploaded as {content_id}")
 
         # Select random user art
         available = await asyncio.wait_for(tv.available(), timeout=30)
@@ -156,9 +203,12 @@ async def main():
                 my_art.append(item)
         if my_art:
             selected = random.choice(my_art)
-            print(f"Selecting: {selected}")
+            artwork_info = state["artwork"].get(selected, {})
+            display_name = format_artwork_info(artwork_info) if artwork_info else selected
+            print(f"Selecting: {display_name} ({selected})")
             await tv.select_image(selected)
-            print(f"Now displaying: {selected}")
+            print(f"Now displaying: {display_name}")
+            send_notification(display_name)
     finally:
         await tv.close()
 
