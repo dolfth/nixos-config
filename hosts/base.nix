@@ -45,6 +45,16 @@ in
 
   services.getty.autologinUser = "dolf";
 
+##### Nix ####################################################################
+
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
+  nix.settings.auto-optimise-store = true;
+
 ##### Packages ###############################################################
 
   environment.systemPackages = with pkgs; [
