@@ -15,10 +15,36 @@ in
   };
 
   config = lib.mkIf cfg.enable (let
-  # External scripts for easier maintenance
-  uploadArtPy = builtins.readFile ../scripts/frame-art-changer/upload-art.py;
-  runUploadSh = builtins.readFile ../scripts/frame-art-changer/run-upload.sh;
-  getTokenPy = builtins.readFile ../scripts/frame-art-changer/get-token.py;
+  samsung-tv-ws-api-src = pkgs.fetchFromGitHub {
+    owner = "NickWaterton";
+    repo = "samsung-tv-ws-api";
+    rev = "d7fc3442c4cdbc4acd3c596fd328792026cee681";
+    hash = "sha256-wAuiYZer3IqHe411Tj9FTeU5g53B0Uuxugh+9IB7ebI=";
+  };
+
+  frame-art-changer-pkg = pkgs.stdenvNoCC.mkDerivation {
+    name = "frame-art-changer";
+    src = ../scripts/frame-art-changer;
+
+    dontBuild = true;
+
+    installPhase = ''
+      mkdir -p $out/bin $out/lib
+
+      # Copy samsung-tv-ws-api library
+      cp -r ${samsung-tv-ws-api-src} $out/lib/samsung-tv-ws-api
+
+      # Copy and substitute scripts
+      for script in upload-art.py get-token.py run-upload.sh delete-all-art.py run-delete-all.sh; do
+        substituteAll $src/$script $out/bin/$script
+      done
+      chmod +x $out/bin/*.sh $out/bin/*.py
+    '';
+
+    samsungTvWsApiPath = "/srv/frame-art-changer/lib/samsung-tv-ws-api";
+    uploadArtPath = "/srv/frame-art-changer/bin/upload-art.py";
+    deleteAllArtPath = "/srv/frame-art-changer/bin/delete-all-art.py";
+  };
 
   # Script to run art upload with retry (WOL should wake TV, so short retries)
   runArtUpload = pkgs.writeShellScript "frame-art-changer-upload" ''
@@ -27,7 +53,7 @@ in
 
     for attempt in $(seq 1 $MAX_ATTEMPTS); do
       echo "Attempt $attempt of $MAX_ATTEMPTS..."
-      if ${pkgs.incus}/bin/incus exec frame-art-changer --env NTFY_TOPIC="$(cat ${config.sops.secrets.ntfy_topic.path})" -- /opt/frame-art-changer/run-upload.sh; then
+      if ${pkgs.incus}/bin/incus exec frame-art-changer --env NTFY_TOPIC="$(cat ${config.sops.secrets.ntfy_topic.path})" -- /srv/frame-art-changer/bin/run-upload.sh; then
         echo "Success on attempt $attempt"
         exit 0
       fi
@@ -60,32 +86,13 @@ in
         source=${cfg.artDirectory} \
         path=/art
 
-      # Set up the container
-      echo "Setting up container..."
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- mkdir -p /opt/frame-art-changer /var/lib/frame-art-changer
+      # Add scripts device (read-only mount from host nix store)
+      ${pkgs.incus}/bin/incus config device add frame-art-changer scripts disk \
+        source=${frame-art-changer-pkg} \
+        path=/srv/frame-art-changer
 
-      # Clone the library
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- \
-        nix --extra-experimental-features "nix-command flakes" shell nixpkgs#git \
-        -c git clone https://github.com/NickWaterton/samsung-tv-ws-api.git /opt/frame-art-changer/samsung-tv-ws-api
-
-      # Write the upload script
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- tee /opt/frame-art-changer/upload-art.py << 'PYSCRIPT'
-${uploadArtPy}
-PYSCRIPT
-
-      # Write the wrapper script
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- tee /opt/frame-art-changer/run-upload.sh << 'SHSCRIPT'
-${runUploadSh}
-SHSCRIPT
-
-      # Write the token helper script
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- tee /opt/frame-art-changer/get-token.py << 'PYTOKENSCRIPT'
-${getTokenPy}
-PYTOKENSCRIPT
-
-      # Make scripts executable
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- chmod +x /opt/frame-art-changer/run-upload.sh /opt/frame-art-changer/upload-art.py /opt/frame-art-changer/get-token.py
+      # Create state directory
+      ${pkgs.incus}/bin/incus exec frame-art-changer -- mkdir -p /var/lib/frame-art-changer
 
       echo "Container setup complete"
     fi

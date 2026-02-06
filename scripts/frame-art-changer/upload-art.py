@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
-sys.path.insert(0, '/opt/frame-art-changer/samsung-tv-ws-api')
+sys.path.insert(0, '@samsungTvWsApiPath@')
 
 import hashlib
 import json

@@ -5,12 +5,12 @@ Get Samsung Frame TV token.
 Run inside the frame-art-changer container:
   incus exec frame-art-changer -- nix --extra-experimental-features "nix-command flakes" shell --impure --option sandbox false \
     --expr '(builtins.getFlake "nixpkgs").legacyPackages.x86_64-linux.python312.withPackages (ps: with ps; [ websocket-client requests websockets aiohttp async-timeout ])' \
-    -c python3 /opt/frame-art-changer/get-token.py
+    -c python3 /srv/frame-art-changer/bin/get-token.py
 
 Watch for the "Allow" popup on your TV and accept it.
 """
 import sys
-sys.path.insert(0, "/opt/frame-art-changer/samsung-tv-ws-api")
+sys.path.insert(0, "@samsungTvWsApiPath@")
 
 import asyncio
 from samsungtvws.async_remote import SamsungTVWSAsyncRemote
