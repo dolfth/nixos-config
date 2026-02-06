@@ -13,7 +13,19 @@ in
 
   # ZFS notifications with secret substitution via sops template
   sops.templates."zed.rc" = {
-    content = ''
+    content = let
+      zedPath = lib.makeBinPath [
+        config.boot.zfs.package
+        pkgs.coreutils
+        pkgs.curl
+        pkgs.gawk
+        pkgs.gnugrep
+        pkgs.gnused
+        pkgs.hostname-debian
+        pkgs.util-linux
+      ];
+    in ''
+      PATH="${zedPath}"
       ZED_NOTIFY_INTERVAL_SECS=3600
       ZED_NTFY_TOPIC="${config.sops.placeholder.ntfy_topic}"
       ZED_NOTIFY_VERBOSE=1
@@ -24,6 +36,9 @@ in
     group = "root";
     mode = "0600";
   };
+
+  # Disable NixOS-managed zed.rc so the sops template takes precedence
+  environment.etc."zfs/zed.d/zed.rc".enable = lib.mkForce false;
 
   services.zfs = {
     autoScrub.enable = true;
