@@ -14,7 +14,13 @@
     mediaDir = "/mnt/media";
     stateDir = "/var/lib/nixarr";
     jellyfin.enable = true;
-    transmission.enable = true;
+    transmission = {
+      enable = true;
+      extraAllowedIps = [ "100.*" ]; # Tailscale CGNAT range
+      extraSettings = {
+        rpc-host-whitelist-enabled = false; # IP whitelist is sufficient
+      };
+    };
     bazarr.enable = true;
     lidarr.enable = true;
     prowlarr.enable = true;
