@@ -2,19 +2,7 @@
 
 let
   cfg = config.services.frame-art-changer;
-in
-{
-  options.services.frame-art-changer = {
-    enable = lib.mkEnableOption "Samsung Frame art changer";
 
-    artDirectory = lib.mkOption {
-      type = lib.types.path;
-      default = "/mnt/media/art";
-      description = "Directory containing art images to display on the Samsung Frame TV";
-    };
-  };
-
-  config = lib.mkIf cfg.enable (let
   samsung-tv-ws-api-src = pkgs.fetchFromGitHub {
     owner = "NickWaterton";
     repo = "samsung-tv-ws-api";
@@ -22,8 +10,13 @@ in
     hash = "sha256-wAuiYZer3IqHe411Tj9FTeU5g53B0Uuxugh+9IB7ebI=";
   };
 
+  pythonEnv = pkgs.python312.withPackages (ps: with ps; [
+    websocket-client requests websockets aiohttp async-timeout
+  ]);
+
   frame-art-changer-pkg = pkgs.stdenvNoCC.mkDerivation {
-    name = "frame-art-changer";
+    pname = "frame-art-changer";
+    version = "unstable-2025-01-01";
     src = ../scripts/frame-art-changer;
 
     dontBuild = true;
@@ -44,6 +37,9 @@ in
     samsungTvWsApiPath = "/srv/frame-art-changer/lib/samsung-tv-ws-api";
     uploadArtPath = "/srv/frame-art-changer/bin/upload-art.py";
     deleteAllArtPath = "/srv/frame-art-changer/bin/delete-all-art.py";
+    pythonPath = "${pythonEnv}/bin/python3";
+    tvIp = cfg.tvIp;
+    tvMac = cfg.tvMac;
   };
 
   # Script to run art upload with retry (WOL should wake TV, so short retries)
@@ -53,7 +49,10 @@ in
 
     for attempt in $(seq 1 $MAX_ATTEMPTS); do
       echo "Attempt $attempt of $MAX_ATTEMPTS..."
-      if ${pkgs.incus}/bin/incus exec frame-art-changer --env NTFY_TOPIC="$(cat ${config.sops.secrets.ntfy_topic.path})" -- /srv/frame-art-changer/bin/run-upload.sh; then
+      if ${pkgs.incus}/bin/incus exec frame-art-changer \
+        --env NTFY_TOPIC="$(cat ${config.sops.secrets.ntfy_topic.path})" \
+        --env TV_TOKEN="$(cat ${config.sops.secrets.tv_token.path})" \
+        -- /srv/frame-art-changer/bin/run-upload.sh; then
         echo "Success on attempt $attempt"
         exit 0
       fi
@@ -102,49 +101,81 @@ in
       echo "Starting frame-art-changer container..."
       ${pkgs.incus}/bin/incus start frame-art-changer || true
     fi
+
+    # Ensure Python environment is available in container
+    if ! ${pkgs.incus}/bin/incus exec frame-art-changer -- test -e ${pythonEnv}/bin/python3; then
+      echo "Copying Python environment to container..."
+      ${pkgs.nix}/bin/nix-store --export $(${pkgs.nix}/bin/nix-store -qR ${pythonEnv}) | \
+        ${pkgs.incus}/bin/incus exec frame-art-changer -- nix-store --import
+    fi
   '';
-  in
-  {
-  # Ensure container exists on boot
-  systemd.services.frame-art-changer-container = {
-    description = "Ensure Samsung Frame art changer container exists";
-    after = [ "incus.service" "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+in
+{
+  options.services.frame-art-changer = {
+    enable = lib.mkEnableOption "Samsung Frame art changer";
 
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = ensureContainer;
+    artDirectory = lib.mkOption {
+      type = lib.types.path;
+      default = "/mnt/media/art";
+      description = "Directory containing art images to display on the Samsung Frame TV";
+    };
+
+    tvIp = lib.mkOption {
+      type = lib.types.str;
+      default = "192.168.20.251";
+      description = "IP address of the Samsung Frame TV";
+    };
+
+    tvMac = lib.mkOption {
+      type = lib.types.str;
+      default = "28:af:42:5f:5e:38";
+      description = "MAC address of the Samsung Frame TV (for Wake-on-LAN)";
     };
   };
 
-  # Art upload service (runs on host, executes into container)
-  systemd.services.frame-art-changer = {
-    description = "Samsung Frame art changer";
-    after = [ "frame-art-changer-container.service" ];
-    requires = [ "frame-art-changer-container.service" ];
+  config = lib.mkIf cfg.enable {
+    sops.secrets.tv_token = {};
 
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = runArtUpload;
+    # Ensure container exists on boot
+    systemd.services.frame-art-changer-container = {
+      description = "Ensure Samsung Frame art changer container exists";
+      after = [ "incus.service" "network-online.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = ensureContainer;
+      };
     };
-  };
 
-  # Timer for daily art rotation at noon
-  systemd.timers.frame-art-changer = {
-    description = "Samsung Frame art changer timer";
-    wantedBy = [ "timers.target" ];
+    # Art upload service (runs on host, executes into container)
+    systemd.services.frame-art-changer = {
+      description = "Samsung Frame art changer";
+      after = [ "frame-art-changer-container.service" ];
+      requires = [ "frame-art-changer-container.service" ];
 
-    timerConfig = {
-      OnCalendar = "*-*-* 12:00:00";
-      Persistent = true;
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = runArtUpload;
+      };
     };
-  };
 
-  # Ensure art directory exists
-  systemd.tmpfiles.rules = [
-    "d ${cfg.artDirectory} 0755 dolf media -"
-  ];
-});
+    # Timer for daily art rotation at noon
+    systemd.timers.frame-art-changer = {
+      description = "Samsung Frame art changer timer";
+      wantedBy = [ "timers.target" ];
+
+      timerConfig = {
+        OnCalendar = "*-*-* 12:00:00";
+        Persistent = true;
+      };
+    };
+
+    # Ensure art directory exists
+    systemd.tmpfiles.rules = [
+      "d ${cfg.artDirectory} 0755 dolf media -"
+    ];
+  };
 }

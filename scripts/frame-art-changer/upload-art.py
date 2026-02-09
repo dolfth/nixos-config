@@ -13,9 +13,9 @@ from samsungtvws.async_art import SamsungTVAsyncArt
 import asyncio
 import requests
 
-TV_IP = "192.168.20.251"
-TV_MAC = "28:af:42:5f:5e:38"
-TV_TOKEN = "16193955"
+TV_IP = "@tvIp@"
+TV_MAC = "@tvMac@"
+TV_TOKEN = os.environ.get("TV_TOKEN")  # Passed via incus exec --env from sops secret
 ART_DIR = Path("/art")
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC")  # Passed via incus exec --env from sops secret
@@ -119,6 +119,10 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=2))
 
 async def main():
+    if not TV_TOKEN:
+        print("TV_TOKEN environment variable is required", file=sys.stderr)
+        sys.exit(1)
+
     state = load_state()
 
     # Wake the TV

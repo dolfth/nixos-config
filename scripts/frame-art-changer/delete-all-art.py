@@ -5,6 +5,7 @@ Delete all user-uploaded art from Samsung Frame TV and reset state.
 Run via wrapper:
   incus exec frame-art-changer -- /srv/frame-art-changer/bin/run-delete-all.sh
 """
+import os
 import sys
 sys.path.insert(0, '@samsungTvWsApiPath@')
 
@@ -13,11 +14,15 @@ import json
 from pathlib import Path
 from samsungtvws.async_art import SamsungTVAsyncArt
 
-TV_IP = "192.168.20.251"
-TV_TOKEN = "16193955"
+TV_IP = "@tvIp@"
+TV_TOKEN = os.environ.get("TV_TOKEN")  # Pass via: incus exec frame-art-changer --env TV_TOKEN=... -- ...
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
 
 async def main():
+    if not TV_TOKEN:
+        print("TV_TOKEN environment variable is required", file=sys.stderr)
+        sys.exit(1)
+
     tv = SamsungTVAsyncArt(TV_IP, token=TV_TOKEN, port=8002)
     await asyncio.wait_for(tv.start_listening(), timeout=30)
 
