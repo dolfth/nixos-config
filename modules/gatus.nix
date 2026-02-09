@@ -26,6 +26,7 @@ let
   ];
 
   serverEndpoints = [
+    { name = "Radicale"; group = "Server"; port = 5232; condition = "[STATUS] == 401"; }
     { name = "Scrutiny"; group = "Server"; port = 8687; }
     { name = "Syncthing"; group = "Server"; port = 8384; condition = "[STATUS] < 400"; }
   ];
