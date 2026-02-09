@@ -1,8 +1,6 @@
 { ... }:
 
 {
-  services.adguardhome.enable = false;
-
   services.mealie.enable = true;
 
   services.scrutiny = {

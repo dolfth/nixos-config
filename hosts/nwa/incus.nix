@@ -22,7 +22,7 @@
             eth0 = {
               name = "eth0";
               type = "nic";
-	      network = "incusbr0";
+              network = "incusbr0";
             };
             root = {
               path = "/";
@@ -57,7 +57,7 @@
           driver = "zfs";
           config = {
             source = "tank/incus";
-	  };
+          };
         }
       ];
 

@@ -4,10 +4,11 @@
   # Add git to recyclarr service PATH (needed for cloning config-templates)
   systemd.services.recyclarr.path = [ pkgs.git ];
 
+  # Plex configured directly (not via nixarr) because nixarr doesn't provide a Plex module
   services.plex = {
     enable = true;
     dataDir = "/var/lib/plex";
-    };
+  };
 
   nixarr = {
     enable = true;
@@ -25,7 +26,6 @@
     lidarr.enable = true;
     prowlarr.enable = true;
     radarr.enable = true;
-    readarr.enable = false;
     sonarr.enable = true;
 
     recyclarr = {
