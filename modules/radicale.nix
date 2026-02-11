@@ -3,6 +3,7 @@
 let
   domain = "nwa.foxhound-insen.ts.net";
   certDir = "/var/lib/tailscale-certs";
+  port = 5232;
 in
 {
   sops.secrets.radicale_htpasswd = {
@@ -13,7 +14,7 @@ in
   services.radicale = {
     enable = true;
     settings = {
-      server.hosts = [ "127.0.0.1:5232" ];
+      server.hosts = [ "127.0.0.1:${toString port}" ];
       auth = {
         type = "htpasswd";
         htpasswd_filename = config.sops.secrets.radicale_htpasswd.path;
@@ -27,7 +28,7 @@ in
     virtualHosts."${domain}" = {
       extraConfig = ''
         tls ${certDir}/${domain}.crt ${certDir}/${domain}.key
-        reverse_proxy localhost:5232
+        reverse_proxy localhost:${toString port}
       '';
     };
   };

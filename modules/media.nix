@@ -12,7 +12,7 @@
 
   nixarr = {
     enable = true;
-    mediaDir = "/mnt/media";
+    mediaDir = config.local.mediaDir;
     stateDir = "/var/lib/nixarr";
     jellyfin.enable = true;
     transmission = {

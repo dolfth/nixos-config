@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./local.nix
     ./frame-art-changer.nix
     ./gatus.nix
     ./jellyplex-watched.nix

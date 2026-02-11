@@ -1,5 +1,8 @@
 { config, pkgs, lib, ... }:
 
+let
+  mediaDir = config.local.mediaDir;
+in
 {
   # Secrets for Soulseek network credentials
   sops.secrets.slskd_soulseek_username = {};
@@ -37,13 +40,13 @@
       };
 
       directories = {
-        incomplete = "/mnt/media/slskd/incomplete";
-        downloads = "/mnt/media/slskd/downloads";
+        incomplete = "${mediaDir}/slskd/incomplete";
+        downloads = "${mediaDir}/slskd/downloads";
       };
 
       shares = {
         directories = [
-          "/mnt/media/music"
+          "${mediaDir}/music"
         ];
       };
 
@@ -72,9 +75,9 @@
 
   # Create download directories
   systemd.tmpfiles.rules = [
-    "d /mnt/media/slskd 0775 slskd media -"
-    "d /mnt/media/slskd/downloads 0775 slskd media -"
-    "d /mnt/media/slskd/incomplete 0775 slskd media -"
+    "d ${mediaDir}/slskd 0775 slskd media -"
+    "d ${mediaDir}/slskd/downloads 0775 slskd media -"
+    "d ${mediaDir}/slskd/incomplete 0775 slskd media -"
   ];
 
   # Add slskd user to media group for shared access

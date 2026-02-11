@@ -1,7 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 let
-  persistDir = "/home/dolf/microvm/claudevm";
+  user = config.local.primaryUser;
+  persistDir = "/home/${user}/microvm/claudevm";
 in
 {
   # Attach the TAP interface to the existing br0 bridge
@@ -12,8 +13,8 @@ in
 
   # Pre-create persistent directories on the host
   systemd.tmpfiles.rules = [
-    "d ${persistDir}/claude-config 0700 dolf dolf -"
-    "d ${persistDir}/workspace 0755 dolf dolf -"
+    "d ${persistDir}/claude-config 0700 ${user} ${user} -"
+    "d ${persistDir}/workspace 0755 ${user} ${user} -"
     "d ${persistDir}/tailscale 0700 root root -"
   ];
 
@@ -36,13 +37,13 @@ in
           {
             tag = "claude-config";
             source = "${persistDir}/claude-config";
-            mountPoint = "/home/dolf/.claude";
+            mountPoint = "/home/${user}/.claude";
             proto = "virtiofs";
           }
           {
             tag = "workspace";
             source = "${persistDir}/workspace";
-            mountPoint = "/home/dolf/workspace";
+            mountPoint = "/home/${user}/workspace";
             proto = "virtiofs";
           }
           {
@@ -96,7 +97,7 @@ in
         extraUpFlags = [ "--ssh" ];
       };
 
-      users.users.dolf = {
+      users.users.${user} = {
         isNormalUser = true;
         uid = 1000;
         initialPassword = "microvm";
@@ -113,7 +114,7 @@ in
       ];
 
       # Point Claude Code at the persistent config dir (virtiofs share)
-      environment.sessionVariables.CLAUDE_CONFIG_DIR = "/home/dolf/.claude";
+      environment.sessionVariables.CLAUDE_CONFIG_DIR = "/home/${user}/.claude";
 
       system.stateVersion = "24.11";
     };

@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  user = "dolf";
+  user = config.local.primaryUser;
 in
 {
 ##### Locale #################################################################
@@ -15,7 +15,7 @@ in
   sops = {
     defaultSopsFile = ../secrets/secrets.yaml;
     defaultSopsFormat = "yaml";
-    age.keyFile = "/home/dolf/.config/sops/age/keys.txt";
+    age.keyFile = "/home/${user}/.config/sops/age/keys.txt";
   };
 
 ##### Users ##################################################################
@@ -23,7 +23,7 @@ in
   users.users.${user} = {
     isNormalUser = true;
     uid = 1000;
-    group = "dolf";
+    group = user;
     description = "Dolf ter Hofste";
     extraGroups = [ "wheel" "users" "media" "incus-admin" ];
     packages = with pkgs; [
@@ -40,10 +40,10 @@ in
     extraGroups = [ "users" ];
   };
 
-  users.groups.dolf.gid = 1000;
+  users.groups.${user}.gid = 1000;
   users.groups.emilie.gid = 1001;
 
-  services.getty.autologinUser = "dolf";
+  services.getty.autologinUser = user;
 
 ##### Nix ####################################################################
 

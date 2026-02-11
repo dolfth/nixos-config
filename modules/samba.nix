@@ -1,10 +1,13 @@
 { config, pkgs, ... }:
 
 let
-  mkTimeMachineShare = user: path: {
+  user = config.local.primaryUser;
+  mediaDir = config.local.mediaDir;
+
+  mkTimeMachineShare = sambaUser: path: {
     inherit path;
-    "valid users" = user;
-    "force user" = user;
+    "valid users" = sambaUser;
+    "force user" = sambaUser;
     "public" = "no";
     "writeable" = "yes";
     "fruit:aapl" = "yes";
@@ -12,10 +15,10 @@ let
     "vfs objects" = "catia fruit streams_xattr";
   };
 
-  mkShare = user: path: extra: {
+  mkShare = sambaUser: path: extra: {
     inherit path;
-    "valid users" = user;
-    "force user" = user;
+    "valid users" = sambaUser;
+    "force user" = sambaUser;
     "public" = "no";
     "writeable" = "yes";
     "fruit:aapl" = "yes";
@@ -34,9 +37,9 @@ in
       "min protocol" = "SMB2";
     };
 
-    settings.backup = mkTimeMachineShare "dolf" "/backup/dolf";
+    settings.backup = mkTimeMachineShare user "/backup/${user}";
     settings.backup-e = mkTimeMachineShare "emilie" "/backup/emilie";
-    settings.media = mkShare "dolf" "/mnt/media" { "force group" = "media"; };
+    settings.media = mkShare user mediaDir { "force group" = "media"; };
   };
 
   # Network discovery via zeroconf (Bonjour) networking

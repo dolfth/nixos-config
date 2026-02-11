@@ -1,5 +1,9 @@
 { config, ... }:
 
+let
+  user = config.local.primaryUser;
+  mediaDir = config.local.mediaDir;
+in
 {
   # Secrets for frame-art-changer (shared into guest via virtiofs)
   sops.secrets.tv_token = {};
@@ -14,7 +18,7 @@
 
   systemd.tmpfiles.rules = [
     "d /run/frame-art-changer-secrets 0700 root root -"
-    "d /mnt/media/art 0755 dolf media -"
+    "d ${mediaDir}/art 0755 ${user} media -"
   ];
 
   # VLAN 20 subinterface on eno2 for IoT/TV network
@@ -44,7 +48,7 @@
           }
           {
             tag = "art";
-            source = "/mnt/media/art";
+            source = "${mediaDir}/art";
             mountPoint = "/art";
             proto = "virtiofs";
           }

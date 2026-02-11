@@ -88,6 +88,8 @@ let
     music-tag
   ]);
 
+  mediaDir = config.local.mediaDir;
+
 in
 {
   # Reuse existing lidarr_api_key
@@ -100,13 +102,13 @@ in
       [Lidarr]
       api_key = ${config.sops.placeholder.lidarr_api_key}
       host_url = http://127.0.0.1:8686
-      download_dir = /mnt/media/slskd/downloads
+      download_dir = ${mediaDir}/slskd/downloads
 
       [Slskd]
       api_key = ${config.sops.placeholder.slskd_api_key}
       host_url = http://127.0.0.1:5030
       url_base = /
-      download_dir = /mnt/media/slskd/downloads
+      download_dir = ${mediaDir}/slskd/downloads
       delete_searches = true
       stalled_timeout = 3600
 
@@ -180,8 +182,8 @@ in
       ReadWritePaths = [
         "/var/lib/soularr"
         "/var/log/soularr"
-        "/mnt/media/slskd"
-        "/mnt/media/music"
+        "${mediaDir}/slskd"
+        "${mediaDir}/music"
       ];
     };
   };

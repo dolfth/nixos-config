@@ -1,7 +1,8 @@
 { config, pkgs, ... }:
 
 let
-  home = "/home/dolf";
+  user = config.local.primaryUser;
+  home = "/home/${user}";
   docs = "${home}/Documents";
   mkFolder = path: devices: { inherit path devices; };
 in
@@ -9,7 +10,7 @@ in
   services.syncthing = {
     enable = true;
     group = "users";
-    user = "dolf";
+    user = user;
     guiAddress = "0.0.0.0:8384";
     openDefaultPorts = true;
     dataDir = home;
