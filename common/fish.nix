@@ -15,6 +15,10 @@
     starship = {
       enable = true;
       presets = [ "gruvbox-rainbow" ];
+      settings.hostname = {
+        ssh_only = false;
+        format = "[@$hostname]($style) ";
+      };
     };
 
   # Launch fish from bash
