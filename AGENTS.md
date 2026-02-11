@@ -6,7 +6,7 @@ Guidance for AI agents working on this NixOS configuration repository.
 
 Single-host NixOS configuration using flakes for a home NAS server (hostname: `nwa`). The system runs ZFS storage, media services, file sharing, and various home server applications. Structured to support multiple hosts.
 
-**Flake Inputs:** nixpkgs (unstable), nixarr (media stack), nixvim (editor), sops-nix (secrets)
+**Flake Inputs:** nixpkgs (unstable), nixarr (media stack), nixvim (editor), sops-nix (secrets), microvm (lightweight VMs)
 
 ## Directory Structure
 
@@ -21,6 +21,7 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │   ├── gatus.nix
 │   ├── jellyplex-watched.nix
 │   ├── media.nix
+│   ├── radicale.nix
 │   ├── samba.nix
 │   ├── services.nix
 │   ├── slskd.nix
@@ -30,6 +31,8 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │   └── frame-art-changer/
 │       ├── upload-art.py
 │       ├── run-upload.sh
+│       ├── delete-all-art.py
+│       ├── run-delete-all.sh
 │       └── get-token.py
 ├── hosts/
 │   ├── base.nix           # Shared host config (users, packages, locale, sops)
@@ -37,6 +40,7 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │       ├── configuration.nix
 │       ├── hardware-configuration.nix
 │       ├── incus.nix
+│       ├── microvm.nix
 │       ├── power.nix
 │       └── zfs.nix
 └── secrets/
@@ -132,8 +136,9 @@ Consistent structure across modules:
 ## Key Infrastructure Details
 
 - **Storage:** ZFS primary with dual boot mirrors (`/boot1`, `/boot2`)
-- **Networking:** Bridge `br0` on `eno2` with nftables
-- **Containers:** Incus with `vlan20` profile for IoT network access
+- **Networking:** Bridge `br0` on `eno2` with nftables, VLAN 20 subinterface for IoT/TV network
+- **MicroVMs:** `artchangervm` on VLAN 20 runs frame-art-changer (cloud-hypervisor, macvtap, virtiofs shares)
+- **Containers:** Incus with `incusbr0` bridge and ZFS storage pool
 - **Monitoring:** Gatus status page with ntfy.sh alerts
 
 ## Adding a New Host
@@ -163,20 +168,20 @@ Before considering a change complete:
 
 ## Agent-Specific Notes
 
-### Working with Incus Containers
-The `frame-art-changer` runs in an Incus container on vlan20. Key points:
-- Container uses ad-hoc `nix shell` for dependencies (no sandbox: `--option sandbox false`)
-- Scripts are deployed via heredoc in the container setup
-- Sends ntfy notifications with artwork info (title, artist, date) on art changes
-- Supports WOL, art mode switching, and display settings
-- To update container scripts: delete container, rebuild, restart service
+### Working with MicroVMs
+The `frame-art-changer` runs inside `artchangervm`, a MicroVM on VLAN 20. Key points:
+- Host decrypts secrets via sops-nix, renders an env file, shares it into the guest via virtiofs
+- Art directory (`/mnt/media/art`) is shared into the guest at `/art` via virtiofs
+- The guest imports `modules/frame-art-changer.nix` and runs the service directly
+- Guest config is fully declarative in `hosts/nwa/microvm.nix`
+- To update: rebuild the host (`nixos-rebuild switch`), the guest config updates automatically
 
 ### Samsung Frame TV Token
 The TV token changes every time "Allow" is clicked. To get a new token:
-```bash
-sudo incus exec frame-art-changer -- nix --extra-experimental-features "nix-command flakes" shell --impure --option sandbox false --expr '(builtins.getFlake "nixpkgs").legacyPackages.x86_64-linux.python312.withPackages (ps: with ps; [ websocket-client requests websockets aiohttp async-timeout ])' -c python3 /opt/frame-art-changer/get-token.py
-```
-Then update `scripts/frame-art-changer/upload-art.py` with the new token.
+1. SSH into the MicroVM
+2. Run the `get-token.py` script from the frame-art-changer package
+3. Accept the "Allow" popup on the TV
+4. Update `tv_token` in `sops secrets/secrets.yaml`
 
 ### Debugging Services
 ```bash
@@ -188,9 +193,16 @@ sudo journalctl -u <service> -f
 
 # List pending systemd jobs (if rebuild hangs)
 sudo systemctl list-jobs
+
+# Check MicroVM status
+sudo systemctl status microvm@artchangervm
+
+# View MicroVM guest logs
+sudo journalctl -M artchangervm -u frame-art-changer
 ```
 
 ### Common Issues
 - **Rebuild hangs:** Check `systemctl list-jobs` for stuck services
 - **Flake doesn't see new file:** Run `git add <file>`
 - **"Unit already loaded" error:** Run `sudo systemctl reset-failed <unit>`
+- **MicroVM macvtap conflict:** Stop old VM before renaming (`sudo systemctl stop microvm@<old-name>`)
