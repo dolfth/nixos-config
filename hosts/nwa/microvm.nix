@@ -23,8 +23,8 @@
     interface = "eno2";
   };
 
-  # MicroVM on VLAN 20
-  microvm.vms.vlan20 = {
+  # MicroVM on VLAN 20 for frame-art-changer
+  microvm.vms.artchangervm = {
     autostart = true;
 
     config = {
@@ -66,7 +66,7 @@
 
         interfaces = [{
           type = "macvtap";
-          id = "vm-vlan20";
+          id = "vm-artchanger";
           mac = "02:00:00:00:20:01";
           macvtap = {
             link = "eno2.20";
