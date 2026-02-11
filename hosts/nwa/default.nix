@@ -12,9 +12,8 @@
     ./hardware-configuration.nix
     ./incus.nix
     ./power.nix
+    ./microvm.nix
     ./zfs.nix
   ];
 
-  # Enable services
-  services.frame-art-changer.enable = true;
 }

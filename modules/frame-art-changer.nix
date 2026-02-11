@@ -21,11 +21,20 @@ let
 
     dontBuild = true;
 
+    pythonPath = "${pythonEnv}/bin/python3";
+    tvIp = cfg.tvIp;
+    tvMac = cfg.tvMac;
+
     installPhase = ''
       mkdir -p $out/bin $out/lib
 
       # Copy samsung-tv-ws-api library
       cp -r ${samsung-tv-ws-api-src} $out/lib/samsung-tv-ws-api
+
+      # Override paths to use $out instead of container paths
+      export samsungTvWsApiPath="$out/lib/samsung-tv-ws-api"
+      export uploadArtPath="$out/bin/upload-art.py"
+      export deleteAllArtPath="$out/bin/delete-all-art.py"
 
       # Copy and substitute scripts
       for script in upload-art.py get-token.py run-upload.sh delete-all-art.py run-delete-all.sh; do
@@ -33,13 +42,6 @@ let
       done
       chmod +x $out/bin/*.sh $out/bin/*.py
     '';
-
-    samsungTvWsApiPath = "/srv/frame-art-changer/lib/samsung-tv-ws-api";
-    uploadArtPath = "/srv/frame-art-changer/bin/upload-art.py";
-    deleteAllArtPath = "/srv/frame-art-changer/bin/delete-all-art.py";
-    pythonPath = "${pythonEnv}/bin/python3";
-    tvIp = cfg.tvIp;
-    tvMac = cfg.tvMac;
   };
 
   # Script to run art upload with retry (WOL should wake TV, so short retries)
@@ -49,10 +51,7 @@ let
 
     for attempt in $(seq 1 $MAX_ATTEMPTS); do
       echo "Attempt $attempt of $MAX_ATTEMPTS..."
-      if ${pkgs.incus}/bin/incus exec frame-art-changer \
-        --env NTFY_TOPIC="$(cat ${config.sops.secrets.ntfy_topic.path})" \
-        --env TV_TOKEN="$(cat ${config.sops.secrets.tv_token.path})" \
-        -- /srv/frame-art-changer/bin/run-upload.sh; then
+      if ${frame-art-changer-pkg}/bin/run-upload.sh; then
         echo "Success on attempt $attempt"
         exit 0
       fi
@@ -66,59 +65,10 @@ let
     echo "All $MAX_ATTEMPTS attempts failed"
     exit 1
   '';
-
-  # Script to ensure container exists and is configured
-  ensureContainer = pkgs.writeShellScript "ensure-frame-art-changer-container" ''
-    set -e
-
-    # Check if container exists
-    if ! ${pkgs.incus}/bin/incus info frame-art-changer &>/dev/null; then
-      echo "Creating frame-art-changer container..."
-      ${pkgs.incus}/bin/incus launch images:nixos/unstable frame-art-changer --profile vlan20
-
-      # Wait for container to be ready
-      echo "Waiting for container to start..."
-      sleep 15
-
-      # Add art directory device
-      ${pkgs.incus}/bin/incus config device add frame-art-changer art disk \
-        source=${cfg.artDirectory} \
-        path=/art
-
-      # Add scripts device (read-only mount from host nix store)
-      ${pkgs.incus}/bin/incus config device add frame-art-changer scripts disk \
-        source=${frame-art-changer-pkg} \
-        path=/srv/frame-art-changer
-
-      # Create state directory
-      ${pkgs.incus}/bin/incus exec frame-art-changer -- mkdir -p /var/lib/frame-art-changer
-
-      echo "Container setup complete"
-    fi
-
-    # Ensure container is running
-    if ! ${pkgs.incus}/bin/incus info frame-art-changer | grep -q 'Status: RUNNING'; then
-      echo "Starting frame-art-changer container..."
-      ${pkgs.incus}/bin/incus start frame-art-changer || true
-    fi
-
-    # Ensure Python environment is available in container
-    if ! ${pkgs.incus}/bin/incus exec frame-art-changer -- test -e ${pythonEnv}/bin/python3; then
-      echo "Copying Python environment to container..."
-      ${pkgs.nix}/bin/nix-store --export $(${pkgs.nix}/bin/nix-store -qR ${pythonEnv}) | \
-        ${pkgs.incus}/bin/incus exec frame-art-changer -- nix-store --import
-    fi
-  '';
 in
 {
   options.services.frame-art-changer = {
     enable = lib.mkEnableOption "Samsung Frame art changer";
-
-    artDirectory = lib.mkOption {
-      type = lib.types.path;
-      default = "/mnt/media/art";
-      description = "Directory containing art images to display on the Samsung Frame TV";
-    };
 
     tvIp = lib.mkOption {
       type = lib.types.str;
@@ -131,34 +81,26 @@ in
       default = "28:af:42:5f:5e:38";
       description = "MAC address of the Samsung Frame TV (for Wake-on-LAN)";
     };
+
+    environmentFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Environment file with TV_TOKEN and NTFY_TOPIC";
+    };
   };
 
   config = lib.mkIf cfg.enable {
-    sops.secrets.tv_token = {};
-
-    # Ensure container exists on boot
-    systemd.services.frame-art-changer-container = {
-      description = "Ensure Samsung Frame art changer container exists";
-      after = [ "incus.service" "network-online.target" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = ensureContainer;
-      };
-    };
-
-    # Art upload service (runs on host, executes into container)
     systemd.services.frame-art-changer = {
       description = "Samsung Frame art changer";
-      after = [ "frame-art-changer-container.service" ];
-      requires = [ "frame-art-changer-container.service" ];
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
 
       serviceConfig = {
         Type = "oneshot";
         ExecStart = runArtUpload;
+        StateDirectory = "frame-art-changer";
+      } // lib.optionalAttrs (cfg.environmentFile != null) {
+        EnvironmentFile = cfg.environmentFile;
       };
     };
 
@@ -172,10 +114,5 @@ in
         Persistent = true;
       };
     };
-
-    # Ensure art directory exists
-    systemd.tmpfiles.rules = [
-      "d ${cfg.artDirectory} 0755 dolf media -"
-    ];
   };
 }

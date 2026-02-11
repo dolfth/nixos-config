@@ -15,10 +15,10 @@ import requests
 
 TV_IP = "@tvIp@"
 TV_MAC = "@tvMac@"
-TV_TOKEN = os.environ.get("TV_TOKEN")  # Passed via incus exec --env from sops secret
+TV_TOKEN = os.environ.get("TV_TOKEN")  # Passed via EnvironmentFile from sops secret
 ART_DIR = Path("/art")
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
-NTFY_TOPIC = os.environ.get("NTFY_TOPIC")  # Passed via incus exec --env from sops secret
+NTFY_TOPIC = os.environ.get("NTFY_TOPIC")  # Passed via EnvironmentFile from sops secret
 
 def send_notification(message: str, title: str = "Frame TV"):
     """Send notification via ntfy.sh."""

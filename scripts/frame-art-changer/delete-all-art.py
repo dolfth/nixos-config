@@ -2,8 +2,7 @@
 """
 Delete all user-uploaded art from Samsung Frame TV and reset state.
 
-Run via wrapper:
-  incus exec frame-art-changer -- /srv/frame-art-changer/bin/run-delete-all.sh
+Run inside the VLAN 20 MicroVM via the wrapper script run-delete-all.sh.
 """
 import os
 import sys
@@ -15,7 +14,7 @@ from pathlib import Path
 from samsungtvws.async_art import SamsungTVAsyncArt
 
 TV_IP = "@tvIp@"
-TV_TOKEN = os.environ.get("TV_TOKEN")  # Pass via: incus exec frame-art-changer --env TV_TOKEN=... -- ...
+TV_TOKEN = os.environ.get("TV_TOKEN")  # Passed via EnvironmentFile from sops secret
 STATE_FILE = Path("/var/lib/frame-art-changer/uploaded.json")
 
 async def main():

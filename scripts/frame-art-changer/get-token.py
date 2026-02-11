@@ -2,13 +2,7 @@
 """
 Get Samsung Frame TV token.
 
-Run inside the frame-art-changer container:
-  incus exec frame-art-changer -- /srv/frame-art-changer/bin/run-upload.sh
-
-Or manually:
-  incus exec frame-art-changer -- @pythonPath@ /srv/frame-art-changer/bin/get-token.py
-
-Watch for the "Allow" popup on your TV and accept it.
+Run inside the VLAN 20 MicroVM. Watch for the "Allow" popup on your TV and accept it.
 """
 import sys
 sys.path.insert(0, "@samsungTvWsApiPath@")
