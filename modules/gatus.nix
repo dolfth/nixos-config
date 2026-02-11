@@ -1,17 +1,13 @@
 { config, pkgs, lib, ... }:
 
 let
-  # Helper to generate endpoint YAML
-  mkEndpoint = { name, group, port, path ? "", condition ? "[STATUS] == 200" }: ''
-    - name: ${name}
-      group: ${group}
-      url: http://localhost:${toString port}${path}
-      interval: 60s
-      conditions:
-        - "${condition}"
-      alerts:
-        - type: ntfy
-  '';
+  mkEndpoint = { name, group, port, path ? "", condition ? "[STATUS] == 200" }: {
+    inherit name group;
+    url = "http://localhost:${toString port}${path}";
+    interval = "60s";
+    conditions = [ condition ];
+    alerts = [{ type = "ntfy"; }];
+  };
 
   mediaEndpoints = [
     { name = "Plex"; group = "Media"; port = 32400; path = "/web"; condition = "[STATUS] < 400"; }
@@ -31,28 +27,25 @@ let
     { name = "Syncthing"; group = "Server"; port = 8384; condition = "[STATUS] < 400"; }
   ];
 
-  allEndpoints = lib.concatMapStrings mkEndpoint (mediaEndpoints ++ serverEndpoints);
+  gatusConfig = {
+    web.port = 8080;
+    alerting.ntfy = {
+      topic = config.sops.placeholder.ntfy_topic;
+      url = "https://ntfy.sh";
+      priority = 4;
+      "default-alert" = {
+        enabled = true;
+        "failure-threshold" = 3;
+        "success-threshold" = 2;
+        "send-on-resolved" = true;
+      };
+    };
+    endpoints = map mkEndpoint (mediaEndpoints ++ serverEndpoints);
+  };
 in
 {
   sops.templates."gatus.yaml" = {
-    content = ''
-      web:
-        port: 8080
-
-      alerting:
-        ntfy:
-          topic: ${config.sops.placeholder.ntfy_topic}
-          url: https://ntfy.sh
-          priority: 4
-          default-alert:
-            enabled: true
-            failure-threshold: 3
-            success-threshold: 2
-            send-on-resolved: true
-
-      endpoints:
-      ${allEndpoints}
-    '';
+    content = builtins.toJSON gatusConfig;
     owner = "gatus";
     group = "gatus";
     mode = "0400";
