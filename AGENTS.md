@@ -12,10 +12,10 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 
 ```
 ├── flake.nix              # Entry point, host definitions, allowUnfree
-├── common/                # Shell/editor config (all hosts)
+├── common/                # Shell/editor config (shared by host + VMs)
 │   ├── fish.nix
 │   ├── nixvim.nix
-│   └── tailscale.nix
+│   └── tailscale.nix      # Host-only (not in common/default.nix)
 ├── modules/               # NAS service modules (shareable)
 │   ├── frame-art-changer.nix
 │   ├── gatus.nix
@@ -39,6 +39,7 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │   └── nwa/               # Physical NAS host
 │       ├── configuration.nix
 │       ├── hardware-configuration.nix
+│       ├── claude-vm.nix
 │       ├── incus.nix
 │       ├── microvm.nix
 │       ├── power.nix
@@ -56,11 +57,11 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 
 ## Mandatory Actions on Every Change
 
-### 1. Always Run Flake Check
+### 1. Always Run Flake Check Before Committing
 ```bash
-nix flake check
+nix --extra-experimental-features 'nix-command flakes' flake check
 ```
-This catches syntax errors without requiring sudo. **Do this before asking the user to rebuild.**
+**You MUST run this and confirm it passes before creating any git commit.** This catches syntax errors without requiring sudo. Never commit without a passing flake check.
 
 ### 2. Stage New Files in Git
 Nix flakes only see git-tracked files. New files must be staged:
@@ -79,7 +80,7 @@ Format: `type: description`
 
 ```bash
 # Check flake for errors (no sudo required)
-nix flake check
+nix --extra-experimental-features 'nix-command flakes' flake check
 
 # Rebuild and switch to new configuration
 sudo nixos-rebuild switch --flake /home/dolf/.config/nixos
