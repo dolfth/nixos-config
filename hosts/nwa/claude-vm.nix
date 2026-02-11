@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, inputs, ... }:
 
 let
   user = config.local.primaryUser;
@@ -22,6 +22,11 @@ in
     autostart = true;
 
     config = {
+      imports = [
+        inputs.nixvim.nixosModules.nixvim
+        ../../common
+      ];
+
       microvm = {
         hypervisor = "cloud-hypervisor";
         vcpu = 4;

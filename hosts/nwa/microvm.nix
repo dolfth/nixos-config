@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 
 let
   user = config.local.primaryUser;
@@ -32,7 +32,11 @@ in
     autostart = true;
 
     config = {
-      imports = [ ../../modules/frame-art-changer.nix ];
+      imports = [
+        inputs.nixvim.nixosModules.nixvim
+        ../../common
+        ../../modules/frame-art-changer.nix
+      ];
 
       microvm = {
         hypervisor = "cloud-hypervisor";

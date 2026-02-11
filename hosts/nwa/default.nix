@@ -3,7 +3,8 @@
 {
   imports = [
     # Common configurations
-    ../../common              # Shell, editor, tailscale
+    ../../common              # Shell, editor (shared with VMs)
+    ../../common/tailscale.nix # Tailscale (host-specific flags)
     ../base.nix               # Users, packages, locale, sops
     ../../modules             # NAS services
 
