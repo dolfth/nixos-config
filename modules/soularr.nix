@@ -1,6 +1,8 @@
 { config, pkgs, lib, ... }:
 
 let
+  mkPythonService = import ../lib/mkPythonService.nix { inherit lib; };
+
   # Fetch Soularr source from GitHub
   soularr-src = pkgs.fetchFromGitHub {
     owner = "mrusse";
@@ -91,111 +93,75 @@ let
   mediaDir = config.local.mediaDir;
 
 in
-{
-  # Reuse existing lidarr_api_key
-  sops.secrets.lidarr_api_key = {};
-  # slskd_api_key is already declared in slskd.nix
-
-  # Soularr config.ini template
-  sops.templates."soularr-config.ini" = {
-    content = ''
-      [Lidarr]
-      api_key = ${config.sops.placeholder.lidarr_api_key}
-      host_url = http://127.0.0.1:8686
-      download_dir = ${mediaDir}/slskd/downloads
-
-      [Slskd]
-      api_key = ${config.sops.placeholder.slskd_api_key}
-      host_url = http://127.0.0.1:5030
-      url_base = /
-      download_dir = ${mediaDir}/slskd/downloads
-      delete_searches = true
-      stalled_timeout = 3600
-
-      [Release Settings]
-      use_most_common_tracknum = true
-      allow_multi_disc = true
-      accepted_countries = Europe,United States,UK,Australia,Canada,Netherlands
-      accepted_formats = CD,Digital Media,Vinyl
-
-      [Search Settings]
-      search_timeout = 5000
-      maximum_peer_queue = 50
-      minimum_peer_upload_speed = 0
-      minimum_filename_match_ratio = 0.9
-      allowed_filetypes = flac,mp3 320,mp3 v0
-      search_for_tracks = true
-      album_prepend_artist = true
-      number_of_albums_to_grab = 10
-      remove_wanted_on_failure = false
-
-      [Logging]
-      level = INFO
-      format = %%(asctime)s - %%(levelname)s - %%(message)s
-      datefmt = %%Y-%%m-%%d %%H:%%M:%%S
-    '';
-    owner = "soularr";
-    group = "soularr";
-    mode = "0400";
-  };
-
-  # System user
-  users.users.soularr = {
-    isSystemUser = true;
-    group = "soularr";
-    home = "/var/lib/soularr";
-    createHome = true;
-    extraGroups = [ "media" ];
-  };
-  users.groups.soularr = {};
-
-  # Create directories
-  systemd.tmpfiles.rules = [
-    "d /var/lib/soularr 0750 soularr soularr -"
-    "d /var/log/soularr 0750 soularr soularr -"
-  ];
-
-  # Systemd service
-  systemd.services.soularr = {
+lib.mkMerge [
+  (mkPythonService {
+    name = "soularr";
     description = "Soularr - Connect Lidarr with Soulseek";
+    inherit pythonEnv;
+    src = soularr-src;
+    entrypoint = "soularr.py";
     after = [ "network.target" "slskd.service" "lidarr.service" ];
     wants = [ "slskd.service" ];
-
-    # Copy config to expected location before running
+    timerConfig = {
+      OnCalendar = "*:0/5";
+      RandomizedDelaySec = "30s";
+    };
+    extraReadWritePaths = [
+      "${mediaDir}/slskd"
+      "${mediaDir}/music"
+    ];
+    extraGroups = [ "media" ];
     preStart = ''
       cp ${config.sops.templates."soularr-config.ini".path} /var/lib/soularr/config.ini
       chmod 400 /var/lib/soularr/config.ini
     '';
+  })
+  {
+    # Reuse existing lidarr_api_key
+    sops.secrets.lidarr_api_key = {};
+    # slskd_api_key is already declared in slskd.nix
 
-    serviceConfig = {
-      Type = "oneshot";
-      User = "soularr";
-      Group = "soularr";
-      WorkingDirectory = "/var/lib/soularr";
-      ExecStart = "${pythonEnv}/bin/python ${soularr-src}/soularr.py";
+    # Soularr config.ini template
+    sops.templates."soularr-config.ini" = {
+      content = ''
+        [Lidarr]
+        api_key = ${config.sops.placeholder.lidarr_api_key}
+        host_url = http://127.0.0.1:8686
+        download_dir = ${mediaDir}/slskd/downloads
 
-      # Hardening
-      NoNewPrivileges = true;
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      PrivateTmp = true;
-      ReadWritePaths = [
-        "/var/lib/soularr"
-        "/var/log/soularr"
-        "${mediaDir}/slskd"
-        "${mediaDir}/music"
-      ];
+        [Slskd]
+        api_key = ${config.sops.placeholder.slskd_api_key}
+        host_url = http://127.0.0.1:5030
+        url_base = /
+        download_dir = ${mediaDir}/slskd/downloads
+        delete_searches = true
+        stalled_timeout = 3600
+
+        [Release Settings]
+        use_most_common_tracknum = true
+        allow_multi_disc = true
+        accepted_countries = Europe,United States,UK,Australia,Canada,Netherlands
+        accepted_formats = CD,Digital Media,Vinyl
+
+        [Search Settings]
+        search_timeout = 5000
+        maximum_peer_queue = 50
+        minimum_peer_upload_speed = 0
+        minimum_filename_match_ratio = 0.9
+        allowed_filetypes = flac,mp3 320,mp3 v0
+        search_for_tracks = true
+        album_prepend_artist = true
+        number_of_albums_to_grab = 10
+        remove_wanted_on_failure = false
+
+        [Logging]
+        level = INFO
+        format = %%(asctime)s - %%(levelname)s - %%(message)s
+        datefmt = %%Y-%%m-%%d %%H:%%M:%%S
+      '';
+      owner = "soularr";
+      group = "soularr";
+      mode = "0400";
     };
-  };
-
-  # Timer to run every 5 minutes
-  systemd.timers.soularr = {
-    description = "Run Soularr periodically";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "*:0/5";
-      Persistent = true;
-      RandomizedDelaySec = "30s";
-    };
-  };
-}
+  }
+]

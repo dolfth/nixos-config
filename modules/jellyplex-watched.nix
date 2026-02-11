@@ -1,6 +1,8 @@
 { config, pkgs, lib, ... }:
 
 let
+  mkPythonService = import ../lib/mkPythonService.nix { inherit lib; };
+
   # Fetch JellyPlex-Watched source
   jellyplex-watched-src = pkgs.fetchFromGitHub {
     owner = "luigi311";
@@ -20,74 +22,43 @@ let
   ]);
 
 in
-{
-  # Declare secrets
-  sops.secrets.plex_token = {};
-  sops.secrets.jellyfin_token = {};
-
-  # Create environment file template with secrets
-  sops.templates."jellyplex-watched.env" = {
-    content = ''
-      PLEX_BASEURL=http://127.0.0.1:32400
-      PLEX_TOKEN=${config.sops.placeholder.plex_token}
-      JELLYFIN_BASEURL=http://127.0.0.1:8096
-      JELLYFIN_TOKEN=${config.sops.placeholder.jellyfin_token}
-      DRYRUN=False
-      DEBUG_LEVEL=INFO
-      LOG_FILE=/var/log/jellyplex-watched/output.log
-      USER_MAPPING={"dolfth": "dolf", "Emilie": "emilie"}
-      LIBRARY_MAPPING={"Movies": "Movies", "TV Shows": "Shows", "Music": "Music"}
-    '';
-    owner = "jellyplex-watched";
-    group = "jellyplex-watched";
-    mode = "0400";
-  };
-
-  # System user for the service
-  users.users.jellyplex-watched = {
-    isSystemUser = true;
-    group = "jellyplex-watched";
-    home = "/var/lib/jellyplex-watched";
-    createHome = true;
-  };
-  users.groups.jellyplex-watched = {};
-
-  # Create log directory
-  systemd.tmpfiles.rules = [
-    "d /var/log/jellyplex-watched 0750 jellyplex-watched jellyplex-watched -"
-  ];
-
-  # Systemd service (runs every hour via timer)
-  systemd.services.jellyplex-watched = {
+lib.mkMerge [
+  (mkPythonService {
+    name = "jellyplex-watched";
     description = "JellyPlex-Watched - Sync watch status between Plex and Jellyfin";
+    inherit pythonEnv;
+    src = jellyplex-watched-src;
+    entrypoint = "main.py";
     after = [ "network.target" "plex.service" ];
-    wants = [ "network.target" ];
-
-    serviceConfig = {
-      Type = "oneshot";
-      User = "jellyplex-watched";
-      Group = "jellyplex-watched";
-      WorkingDirectory = "/var/lib/jellyplex-watched";
-      EnvironmentFile = config.sops.templates."jellyplex-watched.env".path;
-      ExecStart = "${pythonEnv}/bin/python ${jellyplex-watched-src}/main.py";
-
-      # Hardening
-      NoNewPrivileges = true;
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      PrivateTmp = true;
-      ReadWritePaths = [ "/var/lib/jellyplex-watched" "/var/log/jellyplex-watched" ];
-    };
-  };
-
-  # Timer to run hourly
-  systemd.timers.jellyplex-watched = {
-    description = "Run JellyPlex-Watched hourly";
-    wantedBy = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "hourly";
-      Persistent = true;  # Run immediately if missed
-      RandomizedDelaySec = "5m";  # Spread load
+      RandomizedDelaySec = "5m";
     };
-  };
-}
+    extraServiceConfig = {
+      EnvironmentFile = config.sops.templates."jellyplex-watched.env".path;
+    };
+  })
+  {
+    # Declare secrets
+    sops.secrets.plex_token = {};
+    sops.secrets.jellyfin_token = {};
+
+    # Create environment file template with secrets
+    sops.templates."jellyplex-watched.env" = {
+      content = ''
+        PLEX_BASEURL=http://127.0.0.1:32400
+        PLEX_TOKEN=${config.sops.placeholder.plex_token}
+        JELLYFIN_BASEURL=http://127.0.0.1:8096
+        JELLYFIN_TOKEN=${config.sops.placeholder.jellyfin_token}
+        DRYRUN=False
+        DEBUG_LEVEL=INFO
+        LOG_FILE=/var/log/jellyplex-watched/output.log
+        USER_MAPPING={"dolfth": "dolf", "Emilie": "emilie"}
+        LIBRARY_MAPPING={"Movies": "Movies", "TV Shows": "Shows", "Music": "Music"}
+      '';
+      owner = "jellyplex-watched";
+      group = "jellyplex-watched";
+      mode = "0400";
+    };
+  }
+]
