@@ -23,7 +23,6 @@ in
 
     config = {
       imports = [
-        inputs.nixvim.nixosModules.nixvim
         ../../common
       ];
 
@@ -95,8 +94,6 @@ in
         };
       };
 
-      services.openssh.enable = true;
-
       services.tailscale = {
         enable = true;
         extraUpFlags = [ "--ssh" ];
@@ -105,7 +102,6 @@ in
       users.users.${user} = {
         isNormalUser = true;
         uid = 1000;
-        initialPassword = "microvm";
         extraGroups = [ "wheel" ];
       };
 

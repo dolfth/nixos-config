@@ -33,7 +33,6 @@ in
 
     config = {
       imports = [
-        inputs.nixvim.nixosModules.nixvim
         ../../common
         ../../modules/frame-art-changer.nix
       ];

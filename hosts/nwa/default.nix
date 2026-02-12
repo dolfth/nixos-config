@@ -4,6 +4,7 @@
   imports = [
     # Common configurations
     ../../common              # Shell, editor (shared with VMs)
+    ../../common/nixvim.nix   # Nixvim (host-only)
     ../../common/tailscale.nix # Tailscale (host-specific flags)
     ../base.nix               # Users, packages, locale, sops
     ../../modules             # NAS services
