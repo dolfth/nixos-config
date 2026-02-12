@@ -96,10 +96,6 @@ in
         };
       };
 
-      services.openssh.enable = true;
-
-      users.users.root.initialPassword = "microvm";
-
       system.stateVersion = "24.11";
     };
   };
