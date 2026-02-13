@@ -27,6 +27,10 @@ in
     interface = "eno2";
   };
 
+  # Ensure macvtap setup waits for the VLAN interface to exist
+  systemd.services."microvm-macvtap-interfaces@".after = [ "sys-subsystem-net-devices-eno2.20.device" ];
+  systemd.services."microvm-macvtap-interfaces@".wants = [ "sys-subsystem-net-devices-eno2.20.device" ];
+
   # MicroVM on VLAN 20 for frame-art-changer
   microvm.vms.artchangervm = {
     autostart = true;
