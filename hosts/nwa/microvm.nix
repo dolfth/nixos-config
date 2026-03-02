@@ -21,15 +21,24 @@ in
     "d ${mediaDir}/art 0755 ${user} media -"
   ];
 
-  # VLAN 20 subinterface on eno2 for IoT/TV network
-  networking.vlans."eno2.20" = {
+  # VLAN 20 subinterface on br0 for IoT/TV network
+  networking.vlans."br0.20" = {
     id = 20;
-    interface = "eno2";
+    interface = "br0";
   };
 
-  # Ensure macvtap setup waits for the VLAN interface to exist
-  systemd.services."microvm-macvtap-interfaces@".after = [ "sys-subsystem-net-devices-eno2.20.device" ];
-  systemd.services."microvm-macvtap-interfaces@".wants = [ "sys-subsystem-net-devices-eno2.20.device" ];
+  # Bring br0.20 UP (no IP needed, just carrier for macvtap)
+  systemd.network.networks."40-br0-20" = {
+    matchConfig.Name = "br0.20";
+    networkConfig.LinkLocalAddressing = "no";
+    linkConfig.RequiredForOnline = "no";
+  };
+
+  # Ensure artchangervm waits for the VLAN interface before starting
+  systemd.services."microvm@artchangervm" = {
+    after = [ "sys-subsystem-net-devices-br0.20.device" ];
+    requires = [ "sys-subsystem-net-devices-br0.20.device" ];
+  };
 
   # MicroVM on VLAN 20 for frame-art-changer
   microvm.vms.artchangervm = {
@@ -80,7 +89,7 @@ in
           id = "vm-artchanger";
           mac = "02:00:00:00:20:01";
           macvtap = {
-            link = "eno2.20";
+            link = "br0.20";
             mode = "bridge";
           };
         }];
