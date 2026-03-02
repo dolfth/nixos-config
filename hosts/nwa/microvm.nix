@@ -54,6 +54,7 @@ in
         hypervisor = "cloud-hypervisor";
         vcpu = 1;
         mem = 256;
+        vsock.cid = 42;
 
         shares = [
           {
