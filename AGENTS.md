@@ -142,6 +142,48 @@ Consistent structure across modules:
 - **Containers:** Incus with `incusbr0` bridge and ZFS storage pool
 - **Monitoring:** Gatus status page with ntfy.sh alerts
 
+## MicroVM & Networking Architecture
+
+### MicroVMs
+
+Two MicroVMs, both using cloud-hypervisor. Guest configs are fully declarative inline in the host `.nix` file — `nixos-rebuild switch` on the host rebuilds both host and guests automatically.
+
+| VM | vCPU | RAM | Network | Purpose |
+|----|------|-----|---------|---------|
+| `artchangervm` | 1 | 256 MB | macvtap on VLAN 20 | Samsung Frame TV art rotation |
+| `claudevm` | 4 | 4 GB | TAP bridged to br0 | Claude Code workspace |
+
+**Shared store:** Both VMs mount the host's `/nix/store` read-only via virtiofs (`ro-store` tag → `/nix/.ro-store`), with a writable overlay at `/nix/.rw-store`. Persistent data lives in a `var.img` volume at `/var`.
+
+**artchangervm extras:**
+- Art dir: host `${mediaDir}/art` → guest `/art` via virtiofs
+- Secrets: host `/run/frame-art-changer-secrets` → guest `/run/secrets` via virtiofs
+- sops renders `TV_TOKEN` + `NTFY_TOPIC` into `/run/frame-art-changer-secrets/env` on the host; the guest reads it as `EnvironmentFile`
+
+### Host Physical Network
+
+```
+eno2 (Intel NIC, hardware hang workaround via fix-eno2-hang service)
+  └── br0 (bridge, DHCP)
+        ├── br0.20 (VLAN 20 subinterface, no IP — carrier for macvtap)
+        └── vm-claude (TAP, bridged to br0 for claudevm)
+```
+
+- Firewall: nftables enabled but `firewall.enable = false` (open)
+- Incus containers: `incusbr0` (10.0.100.0/24, NAT)
+
+### artchangervm Networking (VLAN 20 / IoT)
+
+- Host creates `br0.20` (VLAN ID 20, no host IP, `LinkLocalAddressing = "no"`)
+- VM uses macvtap in bridge mode on `br0.20` — MAC `02:00:00:00:20:01`
+- Guest gets DHCP address on VLAN 20; Samsung TV reachable at `192.168.20.251`
+- `microvm@artchangervm` systemd service requires `sys-subsystem-net-devices-br0.20.device` before starting
+
+### claudevm Networking (Main LAN)
+
+- VM uses TAP interface `vm-claude` (MAC `02:00:00:00:00:02`) bridged to `br0` via `systemd.network.networks."21-vm-claude"`
+- Guest gets DHCP on the main LAN
+
 ## Adding a New Host
 
 1. Create `hosts/<name>/` directory
@@ -207,3 +249,4 @@ sudo journalctl -M artchangervm -u frame-art-changer
 - **Flake doesn't see new file:** Run `git add <file>`
 - **"Unit already loaded" error:** Run `sudo systemctl reset-failed <unit>`
 - **MicroVM macvtap conflict:** Stop old VM before renaming (`sudo systemctl stop microvm@<old-name>`)
+- **MicroVM timer fires at wrong time:** MicroVMs do NOT inherit the host timezone from `base.nix`. Always set `time.timeZone` explicitly in the guest config, otherwise systemd timers run in UTC.
