@@ -35,6 +35,7 @@ lib.mkMerge [
       RandomizedDelaySec = "5m";
     };
     extraServiceConfig = {
+      Type = "simple";
       EnvironmentFile = config.sops.templates."jellyplex-watched.env".path;
     };
   })
