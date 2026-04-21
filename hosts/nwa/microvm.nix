@@ -13,11 +13,10 @@ in
       TV_TOKEN=${config.sops.placeholder.tv_token}
       NTFY_TOPIC=${config.sops.placeholder.ntfy_topic}
     '';
-    path = "/run/frame-art-changer-secrets/env";
+    # No path override: renders to /run/secrets/rendered/frame-art-changer-env (a real file, not a symlink)
   };
 
   systemd.tmpfiles.rules = [
-    "d /run/frame-art-changer-secrets 0700 root root -"
     "d ${mediaDir}/art 0755 ${user} media -"
   ];
 
@@ -50,6 +49,15 @@ in
         ../../modules/frame-art-changer.nix
       ];
 
+      services.openssh = {
+        enable = true;
+        settings.PermitRootLogin = "yes";
+      };
+
+      users.users.root.openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBA2RcuVWjT5vlSHUdcNi8hWcG5xiRI1BJcHjlWq1dqY 12677636+dolfth@users.noreply.github.com"
+      ];
+
       microvm = {
         hypervisor = "cloud-hypervisor";
         vcpu = 1;
@@ -71,7 +79,7 @@ in
           }
           {
             tag = "secrets";
-            source = "/run/frame-art-changer-secrets";
+            source = "/run/secrets/rendered";
             mountPoint = "/run/secrets";
             proto = "virtiofs";
           }
@@ -98,7 +106,7 @@ in
 
       services.frame-art-changer = {
         enable = true;
-        environmentFile = "/run/secrets/env";
+        environmentFile = "/run/secrets/frame-art-changer-env";
       };
 
       systemd.network = {
@@ -106,9 +114,17 @@ in
         networks."20-lan" = {
           matchConfig.Type = "ether";
           networkConfig.DHCP = "yes";
+          linkConfig.RequiredForOnline = "routable";
         };
       };
 
+      # Forward guest journal to serial console so host can see it via journalctl -u microvm@artchangervm
+      services.journald.extraConfig = ''
+        ForwardToConsole=yes
+        TTYPath=/dev/ttyS0
+      '';
+
+      time.timeZone = "Europe/Amsterdam";
       system.stateVersion = "24.11";
     };
   };

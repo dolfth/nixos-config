@@ -140,7 +140,7 @@ async def main():
         tv = SamsungTVAsyncArt(TV_IP, token=TV_TOKEN, port=8002)
         await asyncio.wait_for(tv.start_listening(), timeout=30)
     except Exception as e:
-        print(f"Failed to connect: {e}", file=sys.stderr)
+        print(f"Failed to connect: {type(e).__name__}: {e}", file=sys.stderr)
         sys.exit(1)
 
     # Ensure TV is in Art Mode
