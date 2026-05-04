@@ -52,7 +52,7 @@ in
       chown root:caddy ${certDir}/${domain}.crt ${certDir}/${domain}.key
       chmod 640 ${certDir}/${domain}.crt ${certDir}/${domain}.key
       if ${pkgs.systemd}/bin/systemctl is-active --quiet caddy; then
-        ${pkgs.systemd}/bin/systemctl reload caddy
+        ${pkgs.systemd}/bin/systemctl reload --no-block caddy
       fi
     '';
   };
