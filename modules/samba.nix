@@ -2,6 +2,7 @@
 
 let
   user = config.local.primaryUser;
+  secondaryUser = config.local.secondaryUser;
   mediaDir = config.local.mediaDir;
 
   mkTimeMachineShare = sambaUser: path: {
@@ -38,7 +39,8 @@ in
     };
 
     settings.backup = mkTimeMachineShare user "/backup/${user}";
-    settings.backup-e = mkTimeMachineShare "emilie" "/backup/emilie";
+    settings.backup-e = mkTimeMachineShare secondaryUser "/backup/${secondaryUser}";
+    settings.backup-ha = mkShare "homeassistant" "/backup/homeassistant" {};
     settings.media = mkShare user mediaDir { "force group" = "media"; };
   };
 

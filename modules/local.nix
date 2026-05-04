@@ -8,6 +8,12 @@
       description = "Primary admin user account name";
     };
 
+    secondaryUser = lib.mkOption {
+      type = lib.types.str;
+      default = "emilie";
+      description = "Secondary user account name";
+    };
+
     mediaDir = lib.mkOption {
       type = lib.types.str;
       default = "/mnt/media";

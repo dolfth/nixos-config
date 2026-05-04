@@ -2,6 +2,7 @@
 
 let
   user = config.local.primaryUser;
+  secondaryUser = config.local.secondaryUser;
 in
 {
 ##### Locale #################################################################
@@ -33,15 +34,22 @@ in
     ];
   };
 
-  users.users.emilie = {
+  users.users.${secondaryUser} = {
     isNormalUser = true;
     uid = 1001;
-    group = "emilie";
+    group = secondaryUser;
     extraGroups = [ "users" ];
   };
 
+  users.users.homeassistant = {
+    isNormalUser = true;
+    uid = 1002;
+    group = "users";
+    description = "Home Assistant backups";
+  };
+
   users.groups.${user}.gid = 1000;
-  users.groups.emilie.gid = 1001;
+  users.groups.${secondaryUser}.gid = 1001;
 
   services.getty.autologinUser = user;
 
