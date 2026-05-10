@@ -13,5 +13,6 @@
     ./slskd.nix
     ./soularr.nix
     ./syncthing.nix
+    ./unifi-backup.nix
   ];
 }

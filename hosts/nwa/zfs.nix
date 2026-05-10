@@ -71,6 +71,10 @@ in
       "tank/media" = {
         useTemplate = ["recent"];
       };
+
+      "tank/backup/unifi" = {
+        useTemplate = ["recent"];
+      };
     };
   };
 }
