@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 Guidance for AI agents working on this NixOS configuration repository.
 
@@ -20,13 +20,15 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │   ├── frame-art-changer.nix
 │   ├── gatus.nix
 │   ├── jellyplex-watched.nix
+│   ├── local.nix
 │   ├── media.nix
 │   ├── radicale.nix
 │   ├── samba.nix
 │   ├── services.nix
 │   ├── slskd.nix
 │   ├── soularr.nix
-│   └── syncthing.nix
+│   ├── syncthing.nix
+│   └── unifi-backup.nix
 ├── scripts/               # External scripts referenced by modules
 │   └── frame-art-changer/
 │       ├── upload-art.py
@@ -37,6 +39,7 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 ├── hosts/
 │   ├── base.nix           # Shared host config (users, packages, locale, sops)
 │   └── nwa/               # Physical NAS host
+│       ├── default.nix
 │       ├── configuration.nix
 │       ├── hardware-configuration.nix
 │       ├── claude-vm.nix
