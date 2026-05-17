@@ -20,8 +20,11 @@
   # zram swap since ZFS doesn't support swap on zvols or swapfiles
   zramSwap.enable = true;
 
-  # Disable wireless and bluetooth to save power
-  boot.blacklistedKernelModules = [ "iwlwifi" "btusb" ];
+  # Disable Bluetooth to save power; WiFi (iwlwifi) is enabled as a backup link
+  boot.blacklistedKernelModules = [ "btusb" ];
+
+  # Required for iwlwifi firmware
+  hardware.enableRedistributableFirmware = true;
 
   hardware.graphics = {
     enable = true;
@@ -41,6 +44,32 @@
     firewall.enable = false;
     bridges.br0.interfaces = [ "eno2" ];
     interfaces.br0.useDHCP = true;
+    wireless = {
+      enable = true;
+      interfaces = [ "wlo1" ];
+      secretsFile = config.sops.templates."wireless.conf".path;
+      networks."Johnny Rotten" = {
+        pskRaw = "ext:psk_home";
+      };
+    };
+  };
+
+  # wlo1 as a backup link; higher DHCP route metric keeps eno2/br0 primary
+  systemd.network.networks."40-wlo1" = {
+    matchConfig.Name = "wlo1";
+    networkConfig.DHCP = "yes";
+    dhcpV4Config.RouteMetric = 2048;
+    dhcpV6Config.RouteMetric = 2048;
+    linkConfig.RequiredForOnline = "no";
+  };
+
+  sops.secrets.wifi_psk_home = {};
+  sops.templates."wireless.conf" = {
+    content = ''
+      psk_home=${config.sops.placeholder.wifi_psk_home}
+    '';
+    owner = "wpa_supplicant";
+    group = "wpa_supplicant";
   };
 
   # Workaround for Intel NIC hardware hang
