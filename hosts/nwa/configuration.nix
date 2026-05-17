@@ -54,15 +54,6 @@
     };
   };
 
-  # wlo1 as a backup link; higher DHCP route metric keeps eno2/br0 primary
-  systemd.network.networks."40-wlo1" = {
-    matchConfig.Name = "wlo1";
-    networkConfig.DHCP = "yes";
-    dhcpV4Config.RouteMetric = 2048;
-    dhcpV6Config.RouteMetric = 2048;
-    linkConfig.RequiredForOnline = "no";
-  };
-
   sops.secrets.wifi_psk_home = {};
   sops.templates."wireless.conf" = {
     content = ''
