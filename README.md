@@ -28,7 +28,6 @@ nix flake update
 - File sharing (Samba, Time Machine, Syncthing)
 - Monitoring (Gatus status page, disk health checks)
 - Samsung Frame TV art rotation (MicroVM on VLAN 20)
-- Calendar/contacts (Radicale with Caddy reverse proxy)
 - Incus containers
 - ZFS storage with snapshots
 

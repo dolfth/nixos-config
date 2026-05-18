@@ -22,7 +22,6 @@ Single-host NixOS configuration using flakes for a home NAS server (hostname: `n
 │   ├── jellyplex-watched.nix
 │   ├── local.nix
 │   ├── media.nix
-│   ├── radicale.nix
 │   ├── samba.nix
 │   ├── services.nix
 │   ├── slskd.nix
