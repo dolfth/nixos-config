@@ -111,9 +111,13 @@ lib.mkMerge [
       "${mediaDir}/music"
     ];
     extraGroups = [ "media" ];
+    # systemd's oneshot+timer already prevents concurrent runs; skip the
+    # in-tree lock file so a SIGKILL'd run can't wedge the service forever.
+    extraServiceConfig = {
+      ExecStart = "${pythonEnv}/bin/python ${soularr-src}/soularr.py --no-lock-file";
+    };
     preStart = ''
-      cp ${config.sops.templates."soularr-config.ini".path} /var/lib/soularr/config.ini
-      chmod 400 /var/lib/soularr/config.ini
+      install -m400 ${config.sops.templates."soularr-config.ini".path} /var/lib/soularr/config.ini
     '';
   })
   {
@@ -147,7 +151,7 @@ lib.mkMerge [
         search_timeout = 5000
         maximum_peer_queue = 50
         minimum_peer_upload_speed = 0
-        minimum_filename_match_ratio = 0.9
+        minimum_filename_match_ratio = 0.95
         allowed_filetypes = flac,mp3 320,mp3 v0
         search_for_tracks = true
         album_prepend_artist = true
@@ -156,8 +160,8 @@ lib.mkMerge [
 
         [Logging]
         level = INFO
-        format = %%(asctime)s - %%(levelname)s - %%(message)s
-        datefmt = %%Y-%%m-%%d %%H:%%M:%%S
+        format = %(asctime)s - %(levelname)s - %(message)s
+        datefmt = %Y-%m-%d %H:%M:%S
       '';
       owner = "soularr";
       group = "soularr";
