@@ -213,6 +213,15 @@ Before considering a change complete:
 
 ## Agent-Specific Notes
 
+### User's Shell is Fish
+The user runs **fish**, not bash. Any command you give them to run must be fish-compatible:
+- Variable assignment is `set K value`, not `K=value`
+- Inline env vars don't work: `K=value command …` → use `env K=value command …` or `set -x K value; command …`
+- Globs are expanded client-side and error on no-match — quote them, or wrap commands in `bash -c "…"` when you need bash glob/redirection semantics
+- `2>/dev/null` works, but `2>&1` is `2>&1` (fish 3.x supports it natively); older fish needed `^/dev/null`
+
+When in doubt, give a `bash -c "…"` wrapper or a fish-native version explicitly.
+
 ### Working with MicroVMs
 The `frame-art-changer` runs inside `artchangervm`, a MicroVM on VLAN 20. Key points:
 - Host decrypts secrets via sops-nix, renders an env file, shares it into the guest via virtiofs
