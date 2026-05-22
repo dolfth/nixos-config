@@ -200,6 +200,33 @@ def reconcile(canonical):
     if to_unmonitor:
         lidarr_put("/album/monitor", {"albumIds": to_unmonitor, "monitored": False})
 
+    # Safety sweep — keep monitorNewItems="none" everywhere so a list created
+    # via Lidarr UI (which defaults to "all") can't re-flood future releases.
+    bad_lists = [
+        il for il in lidarr_get("/importlist")
+        if il.get("monitorNewItems") != "none"
+    ]
+    if bad_lists:
+        print(f"Sweeping monitorNewItems=none on {len(bad_lists)} import list(s)")
+        for il in bad_lists:
+            il["monitorNewItems"] = "none"
+            lidarr_put(f"/importlist/{il['id']}", il)
+    else:
+        print("Import-list sweep: all set to 'none'")
+
+    bad_artists = [
+        a["id"] for a in lidarr_get("/artist")
+        if a.get("monitorNewItems") != "none"
+    ]
+    if bad_artists:
+        print(f"Sweeping monitorNewItems=none on {len(bad_artists)} artist(s)")
+        lidarr_put(
+            "/artist/editor",
+            {"artistIds": bad_artists, "monitorNewItems": "none"},
+        )
+    else:
+        print("Artist sweep: all set to 'none'")
+
 
 def existing_keeper_mbids():
     return set(read_keepers())
