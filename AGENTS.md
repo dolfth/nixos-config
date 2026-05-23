@@ -143,6 +143,7 @@ Consistent structure across modules:
 - **MicroVMs:** `artchangervm` on VLAN 20 runs frame-art-changer (cloud-hypervisor, macvtap, virtiofs shares)
 - **Containers:** Incus with `incusbr0` bridge and ZFS storage pool
 - **Monitoring:** Gatus status page with ntfy.sh alerts
+- **Music curation:** 17 Lidarr Import Lists (Last.fm + MB Series) define canonical set; `music-curate` binary (`modules/music-curate.nix`) reconciles Lidarr state against canonical and flags duds. User keepers at `~/music-keepers.txt`, report at `~/music-review.md`.
 
 ## MicroVM & Networking Architecture
 
