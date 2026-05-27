@@ -73,12 +73,17 @@ in
     };
   };
 
-  # Create download directories
+  # Create download directories with SGID so new subdirs inherit group=media.
+  # Combined with UMask=0002 below, slskd's downloads end up group-writable for
+  # soularr (which is also in media) so the import-into-Lidarr move can complete.
   systemd.tmpfiles.rules = [
-    "d ${mediaDir}/slskd 0775 slskd media -"
-    "d ${mediaDir}/slskd/downloads 0775 slskd media -"
-    "d ${mediaDir}/slskd/incomplete 0775 slskd media -"
+    "d ${mediaDir}/slskd 2775 slskd media -"
+    "d ${mediaDir}/slskd/downloads 2775 slskd media -"
+    "d ${mediaDir}/slskd/incomplete 2775 slskd media -"
   ];
+
+  # Make every file/dir slskd creates group-writable.
+  systemd.services.slskd.serviceConfig.UMask = "0002";
 
   # Add slskd user to media group for shared access
   users.users.slskd.extraGroups = [ "media" ];
