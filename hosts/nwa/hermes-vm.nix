@@ -4,6 +4,12 @@ let
   user = config.local.primaryUser;
   # Single media subfolder shared into the guest read-write.
   sharedDir = "${config.local.mediaDir}/radio/Solid Steel (tagged)";
+  # General agent workspace, read-write. Host folder lives under the user's
+  # Documents; the guest sees it at a clean /home/dolf/hermes-workspace path.
+  # Grant/revoke projects by moving them in/out of the host folder — no rebuild
+  # needed to change contents, only to add/remove a share entry like this one.
+  workspaceSrc = "/home/${user}/Documents/_hermes";
+  workspaceMnt = "/home/${user}/hermes-workspace";
   # Must sit on an all-root-owned ancestry: systemd-tmpfiles refuses to create a
   # root-owned dir beneath a non-root-owned path (unsafe path transition,
   # CVE-2017-18078). /home/dolf (dolf) and /var/lib/microvms (microvm) both trip
@@ -61,6 +67,16 @@ in
             tag = "solidsteel";
             source = sharedDir;
             mountPoint = sharedDir;
+            proto = "virtiofs";
+          }
+          {
+            # Agent workspace, read-write. Host dir is owned dolf:users (uid
+            # 1000), and the guest's dolf is uid 1000, so it owns the tree —
+            # read/write works with no group plumbing. The host folder must
+            # exist before the VM boots (virtiofs source).
+            tag = "workspace";
+            source = workspaceSrc;
+            mountPoint = workspaceMnt;
             proto = "virtiofs";
           }
         ];
