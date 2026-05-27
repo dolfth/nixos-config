@@ -23,6 +23,11 @@
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Note: hermes-agent keeps its OWN pinned nixpkgs on purpose — its agent
+    # package is built with uv2nix against that exact rev. Do NOT make it
+    # follow our nixpkgs or the Python build breaks.
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs = { self, nixpkgs, nixarr, nixvim, sops-nix, microvm, ... }@inputs: {

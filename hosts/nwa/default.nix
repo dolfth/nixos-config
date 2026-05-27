@@ -15,7 +15,7 @@
     ./incus.nix
     ./power.nix
     ./microvm.nix
-    ./claude-vm.nix
+    ./hermes-vm.nix
     ./zfs.nix
   ];
 
