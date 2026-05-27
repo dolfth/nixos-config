@@ -2,6 +2,8 @@
 
 let
   user = config.local.primaryUser;
+  # Single media subfolder shared into the guest read-write.
+  sharedDir = "${config.local.mediaDir}/radio/Solid Steel (tagged)";
   # Must sit on an all-root-owned ancestry: systemd-tmpfiles refuses to create a
   # root-owned dir beneath a non-root-owned path (unsafe path transition,
   # CVE-2017-18078). /home/dolf (dolf) and /var/lib/microvms (microvm) both trip
@@ -49,6 +51,16 @@ in
             tag = "tailscale";
             source = "${persistDir}/tailscale";
             mountPoint = "/var/lib/tailscale";
+            proto = "virtiofs";
+          }
+          {
+            # "Solid Steel (tagged)" radio folder, read-write. virtiofs passes
+            # numeric UIDs/GIDs through untouched: the dir is owned dolf:media
+            # (1000:169), so the guest's dolf (uid 1000, in the media group
+            # declared below) can read and write it.
+            tag = "solidsteel";
+            source = sharedDir;
+            mountPoint = sharedDir;
             proto = "virtiofs";
           }
         ];
@@ -108,13 +120,18 @@ in
         authKeyFile = "/var/lib/tailscale/authkey";
       };
 
+      # Match the host's media group GID so virtiofs UID/GID passthrough lines up
+      # and the guest's dolf can write group-owned files in the shared folder.
+      users.groups.media.gid = 169;
+
       users.users.${user} = {
         isNormalUser = true;
         uid = 1000;
         # `hermes` group → access to the gateway's shared state dir (2770) so the
         # interactive `hermes` CLI uses the same config/sessions as the service.
         # The module only auto-adds users to this group in container mode.
-        extraGroups = [ "wheel" "hermes" ];
+        # `media` group → read-write access to the shared media folder.
+        extraGroups = [ "wheel" "hermes" "media" ];
       };
 
       # Hermes agent — always-on gateway + CLI on PATH.
