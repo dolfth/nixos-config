@@ -143,9 +143,9 @@ in
         settings = {
           model = {
             provider = "custom";                   # custom OpenAI-compatible endpoint
-            model = "Qwen3.6-35B-A3B-4bit"; 
+            default = "Qwen3.6-35B-A3B-4bit";       # main model id — MUST be `default` (not `model`); the gateway reads model.default
             base_url = "http://gza:8000/v1";        # local LLM endpoint (must be resolvable from the VM)
-            api_key = "local";                      # dummy; local endpoint needs no real key
+            api_key = "1234";                       # read because provider == "custom"
           };
           toolsets = [ "all" ];
           terminal = { backend = "local"; cwd = "."; };
