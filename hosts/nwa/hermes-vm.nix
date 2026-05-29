@@ -163,9 +163,35 @@ in
             base_url = "http://gza:8000/v1";        # local LLM endpoint (must be resolvable from the VM)
             api_key = "1234";                       # read because provider == "custom"
           };
+          # Short names for the `/model` switcher (and tab-completion). Both
+          # models are served by the same gza endpoint, so they reuse the
+          # custom provider + model.api_key above (DirectAlias carries no key).
+          # `a3b` is the default 35B MoE; `optiq` is the 27B OptiQ build.
+          model_aliases = {
+            a3b = {
+              model = "Qwen3.6-35B-A3B-4bit";
+              provider = "custom";
+              base_url = "http://gza:8000/v1";
+            };
+            optiq = {
+              model = "Qwen3.6-27B-OptiQ-4bit";
+              provider = "custom";
+              base_url = "http://gza:8000/v1";
+            };
+          };
           toolsets = [ "all" ];
           terminal = { backend = "local"; cwd = "."; };
         };
+
+        # Tools the agent reaches for from its shell. extraPackages (not plain
+        # systemPackages) is the right knob: it lands on the gateway service
+        # PATH that the local terminal tool inherits, and on the interactive
+        # `hermes` CLI's per-user profile. The package already provides git,
+        # node, ripgrep, ssh and ffmpeg; these fill the curl/python gap.
+        extraPackages = with pkgs; [
+          curl
+          python3
+        ];
       };
 
       environment.systemPackages = with pkgs; [
