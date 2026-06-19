@@ -69,6 +69,7 @@ in
     cifs-utils
     dust
     ethtool
+    exiftool
     ghostty.terminfo
     git
     hdparm
