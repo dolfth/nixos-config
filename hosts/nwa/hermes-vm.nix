@@ -2,8 +2,6 @@
 
 let
   user = config.local.primaryUser;
-  # Single media subfolder shared into the guest read-write.
-  sharedDir = "${config.local.mediaDir}/radio/Solid Steel (tagged)";
   # General agent workspace, read-write. Host folder lives under the user's
   # Documents; the guest sees it at a clean /home/dolf/hermes-workspace path.
   # Grant/revoke projects by moving them in/out of the host folder — no rebuild
@@ -30,6 +28,16 @@ in
   systemd.tmpfiles.rules = [
     "d ${persistDir}/tailscale 0700 root root -"
   ];
+
+  # Discord bot token for the Hermes gateway. Setting DISCORD_BOT_TOKEN in the
+  # agent's environment is all it takes to enable the Discord platform
+  # (gateway/config.py auto-enables it on token presence). The token lives in
+  # secrets/secrets.yaml (sops); we render it into an env file on the host and
+  # share it read-only into the guest below — same mechanism as artchangervm.
+  sops.secrets.discord_bot_token = { };
+  sops.templates."hermes-env".content = ''
+    DISCORD_BOT_TOKEN=${config.sops.placeholder.discord_bot_token}
+  '';
 
   microvm.vms.hermesvm = {
     autostart = true;
@@ -60,16 +68,6 @@ in
             proto = "virtiofs";
           }
           {
-            # "Solid Steel (tagged)" radio folder, read-write. virtiofs passes
-            # numeric UIDs/GIDs through untouched: the dir is owned dolf:media
-            # (1000:169), so the guest's dolf (uid 1000, in the media group
-            # declared below) can read and write it.
-            tag = "solidsteel";
-            source = sharedDir;
-            mountPoint = sharedDir;
-            proto = "virtiofs";
-          }
-          {
             # Agent workspace, read-write. Host dir is owned dolf:users (uid
             # 1000), and the guest's dolf is uid 1000, so it owns the tree —
             # read/write works with no group plumbing. The host folder must
@@ -79,12 +77,28 @@ in
             mountPoint = workspaceMnt;
             proto = "virtiofs";
           }
+	  {
+           tag = "music";
+           source = "${config.local.mediaDir}/music";
+           mountPoint = "${config.local.mediaDir}/music";
+           proto = "virtiofs";
+	   readOnly = true;
+           }
+          {
+            # Rendered sops secrets (host) → guest /run/secrets, read-only. The
+            # gateway reads DISCORD_BOT_TOKEN from /run/secrets/hermes-env via
+            # services.hermes-agent.environmentFiles below.
+            tag = "secrets";
+            source = "/run/secrets/rendered";
+            mountPoint = "/run/secrets";
+            proto = "virtiofs";
+            readOnly = true;
+          }
         ];
 
         writableStoreOverlay = "/nix/.rw-store";
 
-        # Holds /var/lib/hermes (sessions, memories, state.db) — bumped from the
-        # old claudevm's 2 GB.
+        # Holds /var/lib/hermes (sessions, memories, state.db) 
         volumes = [{
           image = "var.img";
           mountPoint = "/var";
@@ -136,18 +150,13 @@ in
         authKeyFile = "/var/lib/tailscale/authkey";
       };
 
-      # Match the host's media group GID so virtiofs UID/GID passthrough lines up
-      # and the guest's dolf can write group-owned files in the shared folder.
-      users.groups.media.gid = 169;
-
       users.users.${user} = {
         isNormalUser = true;
         uid = 1000;
         # `hermes` group → access to the gateway's shared state dir (2770) so the
         # interactive `hermes` CLI uses the same config/sessions as the service.
         # The module only auto-adds users to this group in container mode.
-        # `media` group → read-write access to the shared media folder.
-        extraGroups = [ "wheel" "hermes" "media" ];
+        extraGroups = [ "wheel" "hermes" ];
       };
 
       # Hermes agent — always-on gateway + CLI on PATH.
@@ -187,11 +196,34 @@ in
         # systemPackages) is the right knob: it lands on the gateway service
         # PATH that the local terminal tool inherits, and on the interactive
         # `hermes` CLI's per-user profile. The package already provides git,
-        # node, ripgrep, ssh and ffmpeg; these fill the curl/python gap.
+        # node, ripgrep, ssh and ffmpeg; 
         extraPackages = with pkgs; [
           curl
           python3
+          chromium   # headless engine for the `browser` toolset (agent-browser)
+	  exiftool
         ];
+
+        # Discord support lives in the `messaging` optional-dependency group
+        # (discord.py + aiohttp + brotlicffi). Pulling the group in resolves it
+        # into the sealed venv alongside core deps — no PYTHONPATH patching. The
+        # Discord gateway still needs a DISCORD_BOT_TOKEN at runtime; that's a
+        # secret, so it goes in environmentFiles, not the plaintext .env below.
+        extraDependencyGroups = [ "messaging" ];
+
+        # Non-secret env, merged into the agent's .env. agent-browser (the
+        # `browser` toolset's backend, fetched at runtime via `npx`) normally
+        # downloads its own Chromium through Playwright, but that build is
+        # dynamically linked and won't run on NixOS. AGENT_BROWSER_EXECUTABLE_PATH
+        # is the documented way to point it at a pre-installed browser, so aim it
+        # at the nixpkgs chromium added to extraPackages above.
+        environment = {
+          AGENT_BROWSER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
+        };
+
+        # Secrets (DISCORD_BOT_TOKEN) from the sops-rendered env file shared in
+        # via virtiofs above. Kept out of `environment` (plaintext .env).
+        environmentFiles = [ "/run/secrets/hermes-env" ];
       };
 
       environment.systemPackages = with pkgs; [
