@@ -24,7 +24,9 @@ let
 in
 {
   sops.secrets.lastfm_api_key = {};
-  # lidarr_api_key is already declared in modules/soularr.nix
+  # Declared here too (not just soularr.nix) since soularr is currently disabled.
+  # Duplicate `{}` declarations merge cleanly if soularr is re-enabled.
+  sops.secrets.lidarr_api_key = {};
 
   sops.templates."music-curate.env" = {
     content = ''
