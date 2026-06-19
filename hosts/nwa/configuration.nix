@@ -60,7 +60,10 @@
     matchConfig.Name = "wlo1";
     networkConfig.DHCP = "yes";
     dhcpV4Config.RouteMetric = 2048;
-    dhcpV6Config.RouteMetric = 2048;
+    # IPv6's default route comes from Router Advertisements, not DHCPv6, so its
+    # metric lives under [IPv6AcceptRA] (systemd dropped RouteMetric from the
+    # [DHCPv6] section; newer networkd type-checks this and rejects it).
+    ipv6AcceptRAConfig.RouteMetric = 2048;
     linkConfig.RequiredForOnline = "no";
   };
 
