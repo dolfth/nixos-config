@@ -34,10 +34,13 @@ in
   # (gateway/config.py auto-enables it on token presence). The token lives in
   # secrets/secrets.yaml (sops); we render it into an env file on the host and
   # share it read-only into the guest below — same mechanism as artchangervm.
-  sops.secrets.discord_bot_token = { };
-  sops.templates."hermes-env".content = ''
-    DISCORD_BOT_TOKEN=${config.sops.placeholder.discord_bot_token}
-  '';
+  # Disabled until a discord_bot_token key is added to secrets/secrets.yaml.
+  # Re-enable these three blocks together (also the virtiofs `secrets` share
+  # and `environmentFiles` below) once the token exists.
+  # sops.secrets.discord_bot_token = { };
+  # sops.templates."hermes-env".content = ''
+  #   DISCORD_BOT_TOKEN=${config.sops.placeholder.discord_bot_token}
+  # '';
 
   microvm.vms.hermesvm = {
     autostart = true;
@@ -84,16 +87,18 @@ in
            proto = "virtiofs";
 	   readOnly = true;
            }
-          {
-            # Rendered sops secrets (host) → guest /run/secrets, read-only. The
-            # gateway reads DISCORD_BOT_TOKEN from /run/secrets/hermes-env via
-            # services.hermes-agent.environmentFiles below.
-            tag = "secrets";
-            source = "/run/secrets/rendered";
-            mountPoint = "/run/secrets";
-            proto = "virtiofs";
-            readOnly = true;
-          }
+          # Disabled with the Discord token (see top of file). Re-enable when
+          # secrets/secrets.yaml has discord_bot_token.
+          # {
+          #   # Rendered sops secrets (host) → guest /run/secrets, read-only. The
+          #   # gateway reads DISCORD_BOT_TOKEN from /run/secrets/hermes-env via
+          #   # services.hermes-agent.environmentFiles below.
+          #   tag = "secrets";
+          #   source = "/run/secrets/rendered";
+          #   mountPoint = "/run/secrets";
+          #   proto = "virtiofs";
+          #   readOnly = true;
+          # }
         ];
 
         writableStoreOverlay = "/nix/.rw-store";
@@ -223,7 +228,8 @@ in
 
         # Secrets (DISCORD_BOT_TOKEN) from the sops-rendered env file shared in
         # via virtiofs above. Kept out of `environment` (plaintext .env).
-        environmentFiles = [ "/run/secrets/hermes-env" ];
+        # Disabled until discord_bot_token is added to secrets/secrets.yaml.
+        # environmentFiles = [ "/run/secrets/hermes-env" ];
       };
 
       environment.systemPackages = with pkgs; [
