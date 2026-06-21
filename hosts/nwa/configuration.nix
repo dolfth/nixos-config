@@ -7,6 +7,7 @@
     enable = true;
     zfsSupport = true;
     efiSupport = true;
+    efiInstallAsRemovable = true;
     mirroredBoots = [
       { devices = [ "nodev" ]; path = "/boot1"; }
       { devices = [ "nodev" ]; path = "/boot2"; }
