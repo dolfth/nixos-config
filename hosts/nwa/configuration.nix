@@ -16,6 +16,12 @@
 
   boot.zfs.extraPools = [ "tank" ];
 
+  # Explicitly keep force-import of the root pool (pre-26.11 behavior).
+  # Single-host server with local disks, so the dual-import data-loss risk
+  # that `false` guards against doesn't apply; `true` avoids dropping to a
+  # rescue shell if the pool wasn't cleanly exported after a crash.
+  boot.zfs.forceImportRoot = true;
+
 ##### Hardware ###############################################################
 
   # zram swap since ZFS doesn't support swap on zvols or swapfiles
